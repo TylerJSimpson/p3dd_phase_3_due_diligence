@@ -1,0 +1,5 @@
+      Hostname:  aact-db.ctti-clinicaltrials.org
+      Port: 5432
+      Database name:  aact
+      User name:  'your AACT username'
+      Password:  'your AACT password' 
