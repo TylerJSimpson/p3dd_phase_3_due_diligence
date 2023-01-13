@@ -9,6 +9,8 @@ ___
 ### Step 3:
 #### Utilize Twitter developer API to pull data for ML sentiment analysis for companies in phase 3 clinical trials. Compile in a cloud database.
 ### Step 4:
+#### Utilize stock market data.
+### Step 5:
 #### Determine serving layer. Either expose an API or continue and create a website and/or app.
 ___
 ### Tools:
