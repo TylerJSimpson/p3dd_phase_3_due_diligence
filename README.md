@@ -1,20 +1,26 @@
 # Phase 3 Clinical Trials Project (Dec 22 - Present)
 ### Overview:   
 ### Clinical trials in phase 3 are very risky investments. In order to help mitigate the risk this project aims to compile data for phase 3 clinical trials (ClinicalTrails.gov) with job posting details (LinkedIn) and sentiment (Twitter) to better inform investors.
+![Flowchart](https://github.com/TylerJSimpson/personal_project_clinicaltrials_2023/blob/main/Flowchart_ClinicalDataProject.jpg)
 ___
-### Step 1:
-#### Utilize AACT PostgreSQL database (ClinicalTrails.gov current data) for daily loads to cloud PostgreSQL. Determine necessary fields to pull and maintain.
-### Step 2:
-#### Utilize LinkedIn.com API and/or webscraping for job details relating to companies in phase 3 clinical trials. Compile in a cloud database.
-### Step 3:
-#### Utilize Twitter developer API to pull data for ML sentiment analysis for companies in phase 3 clinical trials. Compile in a cloud database.
-### Step 4:
-#### Utilize stock market data.
-### Step 5:
-#### Determine serving layer. Either expose an API or continue and create a website and/or app.
+### Stage 1: ETL Clinical Data
+* RESEARCH: Determine necessary data fields needed from ClinicalTrials.gov
+* EXTRACT: Utilize [AACT PostgreSQL database](https://aact.ctti-clinicaltrials.org/) which populates data from ClinicalTrials.gov daily to dump the necessary fields
+* EXTRACT: Prefect Python pipeline to load raw data from Postgres into GCS
+* EXTRACT: Prefect Python pipeline to load raw data from GCS to BigQuery
+* TRANFORM: DBT SQL transformation in BigQuery data staged for merging with job data
+### Stage 2: ETL Job Data
+* RESEARCH: Determine necessary data fields needed from LinkedIn.com
+* EXTRACT: Prefect Python pipeline to scrape raw data from LinkedIn into GCS
+* EXTRACT: Prefect Python pipeline to load raw data from GCS to BigQuery
+* TRANSFORM: DBT SQL transformation in BigQuery data staged for merging with clinical data
+### Stage 3: Serve Data
+### Stage 4: ETL Sentiment Data
+
 ___
 ### Tools:
 #### * Programming: Python, SQL
-#### * Cloud: Placeholder
+#### * ETL: Prefect, DBT
+#### * Cloud: GCP - GCS, BigQuery
 #### * Serving: Placeholder
 
