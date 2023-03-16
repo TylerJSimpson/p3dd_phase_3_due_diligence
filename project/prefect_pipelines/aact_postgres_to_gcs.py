@@ -7,11 +7,11 @@ from configparser import ConfigParser
 from prefect import task, Flow
 from prefect_gcp import GcpCredentials
 from prefect_gcp.cloud_storage import GcsBucket
+import datetime
 
 """
 TO-DO:
 add logging
-parameterize? at least file name
 """
 
 @task
@@ -60,10 +60,11 @@ def postgresql_to_gcs():
 
     data = query_postgresql(pg_creds, "SELECT * FROM studies LIMIT 10")
 
-    parquet_file = 'aact_studies_test_03152023_01.parquet'
+    current_datetime = datetime.datetime.now().strftime('%m%d%Y_%H%M%S')
+    parquet_file = f'aact_studies_test_{current_datetime}.parquet'
     write_parquet_file(data, parquet_file)
 
-    upload_to_gcs(parquet_file, 'zoom-gcs', 'project/bronze/aact_studies_test_03152023_01.parquet')
+    upload_to_gcs(parquet_file, 'zoom-gcs', f'project/bronze/{parquet_file}')
 
 if __name__ == "__main__":
     postgresql_to_gcs()
