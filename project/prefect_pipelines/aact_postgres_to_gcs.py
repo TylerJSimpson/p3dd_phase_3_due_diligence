@@ -8,6 +8,7 @@ from prefect import task, Flow
 from prefect_gcp import GcpCredentials
 from prefect_gcp.cloud_storage import GcsBucket
 import datetime
+import os
 
 """
 TO-DO:
@@ -54,6 +55,11 @@ def upload_to_gcs(file_path, bucket_name, destination_blob_name):
     gcs_bucket.upload_from_path(from_path=file_path, to_path=destination_blob_name)
 
 
+@task
+def delete_local_file(file_path):
+    os.remove(file_path)
+
+
 @Flow
 def postgresql_to_gcs():
     pg_creds = read_postgresql_credentials('/home/tjsimpson/project/configuration/config.ini')
@@ -65,6 +71,8 @@ def postgresql_to_gcs():
     write_parquet_file(data, parquet_file)
 
     upload_to_gcs(parquet_file, 'zoom-gcs', f'project/bronze/{parquet_file}')
+
+    delete_local_file(parquet_file)
 
 if __name__ == "__main__":
     postgresql_to_gcs()
