@@ -5,7 +5,7 @@ Generalized instructions for setup and running the prefect pipelines for the cli
 
 Ensure you are in the python environment:
 ```bash
-python activate zoom
+conda activate zoom
 ```
 
 Authorize gcloud:
