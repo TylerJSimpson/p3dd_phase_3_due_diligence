@@ -64,10 +64,10 @@ def delete_local_file(file_path):
 def postgresql_to_gcs():
     pg_creds = read_postgresql_credentials('/home/tjsimpson/project/configuration/config.ini')
 
-    data = query_postgresql(pg_creds, "SELECT * FROM studies LIMIT 10")
+    data = query_postgresql(pg_creds, "SELECT * FROM studies")
 
     current_datetime = datetime.datetime.now().strftime('%m%d%Y_%H%M%S')
-    parquet_file = f'aact_studies_test_{current_datetime}.parquet'
+    parquet_file = f'aact_studies_{current_datetime}.parquet'
     write_parquet_file(data, parquet_file)
 
     upload_to_gcs(parquet_file, 'zoom-gcs', f'project/bronze/{parquet_file}')
