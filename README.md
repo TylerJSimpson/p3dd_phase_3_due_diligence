@@ -1,7 +1,7 @@
 # Phase 3 Clinical Trials Project (Dec 22 - Present)
 ### Overview:   
 ### Clinical trials in phase 3 are very risky investments. In order to help mitigate the risk this project aims to compile data for phase 3 clinical trials (ClinicalTrails.gov) with job posting details (LinkedIn) and sentiment (Twitter) to better inform investors.
-![Flowchart](https://github.com/TylerJSimpson/personal_project_clinicaltrials_2023/blob/main/Flowchart_ClinicalDataProject.jpg)
+![Flowchart](https://github.com/TylerJSimpson/personal_project_clinicaltrials_2023/blob/main/Flowchart_Project.jpg)
 ___
 ### Stage 1: ETL Clinical Data
 * RESEARCH: Determine necessary data fields needed from ClinicalTrials.gov
