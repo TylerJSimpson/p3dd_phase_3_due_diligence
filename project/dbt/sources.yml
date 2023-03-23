@@ -1,0 +1,13 @@
+version: 2
+
+sources:
+  - name: aact_studies
+    schema: bronze
+    description: "Data from the aact studies table"
+    loader:
+      type: parquet
+      files:
+        - name: aact_studies
+          description: "Data from the aact studies table"
+          path: "gs://dtc_data_lake_dtc-de-0315/project/bronze/aact_studies_{{ execution_date.strftime('%m%d%Y') }}_*.parquet" #only checking date and leaving out time
+          schema: auto
