@@ -28,7 +28,7 @@ Port 4200 must also be forwarded to be able to connect to web UI via localhost:4
 ## Pipelines
 
 ### aact_postgres_to_gcs.py
-This pipeline moves data from the public AACT database to GCS bucket.  
+This pipeline moves data from the public AACT database to GCS bucket and BigQuery.  
 [aact_postgres_to_gcs_and_bq.py](https://github.com/TylerJSimpson/personal_project_clinicaltrials_2023/blob/main/project/prefect_pipelines/aact_postgres_to_gcs_and_bq.py)  
 [aact_postgres_to_gcs_and_bq-deployment.yaml](https://github.com/TylerJSimpson/personal_project_clinicaltrials_2023/blob/main/project/prefect_pipelines/aact_postgres_to_gcs_and_bq-deployment.yaml)  
   
