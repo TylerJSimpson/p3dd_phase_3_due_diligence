@@ -29,20 +29,20 @@ Port 4200 must also be forwarded to be able to connect to web UI via localhost:4
 
 ### aact_postgres_to_gcs.py
 This pipeline moves data from the public AACT database to GCS bucket.  
-[aact_postgres_to_gcs.py](https://github.com/TylerJSimpson/personal_project_clinicaltrials_2023/blob/main/project/prefect_pipelines/aact_postgres_to_gcs.py)  
-[postgresql_to_gcs-deployment.yaml](https://github.com/TylerJSimpson/personal_project_clinicaltrials_2023/blob/main/project/prefect_pipelines/postgresql_to_gcs-deployment.yaml)  
+[aact_postgres_to_gcs_and_bq.py](https://github.com/TylerJSimpson/personal_project_clinicaltrials_2023/blob/main/project/prefect_pipelines/aact_postgres_to_gcs_and_bq.py)  
+[aact_postgres_to_gcs_and_bq-deployment.yaml](https://github.com/TylerJSimpson/personal_project_clinicaltrials_2023/blob/main/project/prefect_pipelines/aact_postgres_to_gcs_and_bq-deployment.yaml)  
   
 run flow manually locally:
 ```bash
-python aact_postgres_to_gcs.py
+python aact_postgres_to_gcs_and_bq.py
 ```
   
 ### Deployment  
 .yaml file created automatically when creating build:
 ```bash
-prefect deployment build ./aact_postgres_to_gcs.py:postgresql_to_gcs -n "aact-postgres-to-gcs.py"
+prefect deployment build ./aact_postgres_to_gcs_and_bq.py:aact_postgres_to_gcs_and_bq -n "aact-postgres-to-gcs-and-bq.py"
 ```
 Confirm build deployment:  
 ```
-prefect deployment apply postgresql_to_gcs_deployment.yaml
+prefect deployment apply aact_postgres_to_gcs_and_bq-deployment.yaml
 ```
