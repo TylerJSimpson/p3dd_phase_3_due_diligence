@@ -1,7 +1,7 @@
 CREATE OR REPLACE EXTERNAL TABLE `dtc-de-0315.bronze.aact_studies_external`
 OPTIONS (
   format = 'parquet',
-  uris = ['gs://dtc_data_lake_dtc-de-0315/project/bronze/aact_studies_03212023_235654.parquet']
+  uris = ['gs://dtc_data_lake_dtc-de-0315/project/bronze/aact_studies_03212023_235654.parquet'] --note this can change just using this as an example to get schema
 );
 
 CREATE OR REPLACE TABLE `dtc-de-0315.bronze.aact_studies`
