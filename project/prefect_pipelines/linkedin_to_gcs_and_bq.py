@@ -45,7 +45,6 @@ def read_bq():
         AND     source_class IN ("INDUSTRY")
         AND     last_update_submitted_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 3 MONTH)
         AND     source <> "[Redacted]"
-        LIMIT   5
     """
     
     # Execute the query
