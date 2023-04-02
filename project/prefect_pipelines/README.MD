@@ -27,20 +27,42 @@ Port 4200 must also be forwarded to be able to connect to web UI via localhost:4
 
 ## Pipelines
 
-### aact_postgres_to_gcs.py
+### aact_postgres_to_gcs_and_bq.py
 This pipeline moves data from the public AACT database to GCS bucket and BigQuery.  
 [aact_postgres_to_gcs_and_bq.py](https://github.com/TylerJSimpson/personal_project_clinicaltrials_2023/blob/main/project/prefect_pipelines/aact_postgres_to_gcs_and_bq.py)  
-[aact_postgres_to_gcs_and_bq-deployment.yaml](https://github.com/TylerJSimpson/personal_project_clinicaltrials_2023/blob/main/project/prefect_pipelines/aact_postgres_to_gcs_and_bq-deployment.yaml)  
+[aact_postgres_to_gcs_and_bq.yaml](https://github.com/TylerJSimpson/personal_project_clinicaltrials_2023/blob/main/project/prefect_pipelines/aact_postgres_to_gcs_and_bq.yaml)  
   
 run flow manually locally:
 ```bash
 python aact_postgres_to_gcs_and_bq.py
 ```
   
-### Deployment  
+#### Deployment  
+Scheduling build for 3:00 AM daily as the AACT database refreshes at 12:00 AM daily except Saturday which is a ~24 hours refresh but the data is available during this time.  
 .yaml file created automatically when creating build:
 ```bash
-prefect deployment build ./aact_postgres_to_gcs_and_bq.py:aact_postgres_to_gcs_and_bq -n "aact-postgres-to-gcs-and-bq.py"
+prefect deployment build ./aact_postgres_to_gcs_and_bq.py:aact_postgres_to_gcs_and_bq -n "aact_postgres_to_gcs_and_bq" --cron "0 3 * * *" -a
+```
+Confirm build deployment:  
+```
+prefect deployment apply aact_postgres_to_gcs_and_bq.yaml
+```
+
+### linkedin_to_gcs_and_bq.py
+PLACEHOLDER.  
+[linkedin_to_gcs_and_bq.py](https://github.com/TylerJSimpson/personal_project_clinicaltrials_2023/blob/main/project/prefect_pipelines/linkedin_to_gcs_and_bq.py)  
+[linkedin_to_gcs_and_bq.py.yaml](https://github.com/TylerJSimpson/personal_project_clinicaltrials_2023/blob/main/project/prefect_pipelines/aact_postgres_to_gcs_and_bq.yaml)  
+  
+run flow manually locally:
+```bash
+python aact_postgres_to_gcs_and_bq.py
+```
+  
+#### Deployment  
+Scheduling build for 3:30 AM daily as the previous pipeline runs at 3:00 AM.  
+.yaml file created automatically when creating build:
+```bash
+prefect deployment build ./linkedin_to_gcs_and_bq.py:linkedin_to_gcs_and_bq -n "linkedin_to_gcs_and_bq" --cron "30 3 * * *" -a
 ```
 Confirm build deployment:  
 ```
