@@ -1,19 +1,14 @@
 # Phase 3 Clinical Trials Project (Dec 22 - Present)
 ### Overview:   
-### Clinical trials in phase 3 are risky investments to navigate. This project aims to mitigate this risk by compiling data for phase 3 clinical trials (ClinicalTrails.gov) with job posting details (LinkedIn.com) for the tracking of company job activity as a potential early indicator of trial success.
-![Flowchart](https://github.com/TylerJSimpson/personal_project_clinicaltrials_2023/blob/main/Flowchart_Project.jpg)
+### Companies with clinical trials in phase 3 are high risk high reward investments. This project aims to mitigate this risk by compiling data for phase 3 clinical trials (ClinicalTrails.gov) with job posting details (LinkedIn.com) for the tracking of company job activity as a potential early indicator of trial success.
+![Flowchart](https://github.com/TylerJSimpson/personal_project_clinicaltrials_2023/blob/main/Flowchart.jpg)
 ___
-### Stage 1: ETL Clinical Data
-* **RESEARCH:** Determine necessary data fields needed from ClinicalTrials.gov
-* **EXTRACT:** Utilize [AACT PostgreSQL database](https://aact.ctti-clinicaltrials.org/) which populates data from ClinicalTrials.gov daily to dump the necessary fields
-* **EXTRACT:** Prefect Python pipeline to load raw data from Postgres into GCS bronze landing zone
-* **LOAD:** DBT SQL external table to load raw data from GCS to BigQuery
-* **TRANFORM:** DBT SQL transformation in BigQuery data staged for merging with job data. The companies names will be passed as variables from the job data pipeline
-### Stage 2: ETL Job Data
-* **RESEARCH:** Determine necessary data fields needed from LinkedIn.com
-* **EXTRACT:** Prefect Python pipeline to scrape raw data from LinkedIn into GCS bronze landing zone
-* **LOAD:** DBT SQL external table to load raw data from GCS to BigQuery 
-* **TRANSFORM:** DBT SQL transformations in BigQuery data staged for merging with clinical data
+### Stage 1: Clinical Trial Data
+* **EXTRACT:** Utilize [AACT PostgreSQL database](https://aact.ctti-clinicaltrials.org/) which populates data from ClinicalTrials.gov and interface with Prefect Python pipeline
+* **LOAD:** Prefect pipeline loads the data into GCS and BigQuery landing zones
+### Stage 2: Job Data
+* **EXTRACT:** Prefect pipeline queries Clinical Trial Data and parses companies to LinkedIn to extract the number of jobs for each company  
+* **LOAD:** Prefect pipeline loads the data into GCS and BigQuery landing zones
 ### Stage 3: Serve Data
 ### Stage 4: ETL Sentiment Data
 
