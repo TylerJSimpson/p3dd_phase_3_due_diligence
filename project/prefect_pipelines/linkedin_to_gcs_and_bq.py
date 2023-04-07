@@ -60,6 +60,9 @@ def get_job_openings(source):
     """
     Function to query US LinkedIn when given company name (source) and returns the number of current jobs
     """
+    if not source:
+        return None
+
     # Construct URL for LinkedIn search page
     search_url = f"https://www.linkedin.com/jobs/search/?keywords={source}&location=USA"
 
@@ -78,7 +81,10 @@ def get_job_openings(source):
         job_titles.append(job_title)
 
     for company in soup.find_all("h4", {"class": "base-search-card__subtitle"}):
-        company_name = company.find("a").text.strip()
+        if company.find("a"):
+            company_name = company.find("a").text.strip()
+        else:
+            company_name = ""
         company_names.append(company_name)
 
     job_dict = dict(zip(job_titles, company_names))
@@ -91,6 +97,10 @@ def add_num_jobs(df):
     For each company name (source) in pandas dataframe append the number of jobs from the function get_job_openings
     """
     df['num_jobs'] = df['source'].apply(get_job_openings)
+    
+    # Handle the case where get_job_openings returns None
+    df['num_jobs'] = df['num_jobs'].fillna(0).astype(int)
+
     return df
 
 @task
