@@ -137,7 +137,7 @@ def write_bq(data: pd.DataFrame) -> None:
 def aact_postgres_to_gcs_and_bq():
  
     #Get Postgresql credentials from local config file
-    pg_creds = read_postgresql_credentials('/home/tjsimpson/project/configuration/config.ini')
+    pg_creds = read_postgresql_credentials('../configuration/config.ini')
 
     #This query selects the entire [studies] table and adds the key column linked_jobs_key by combining 'nct_id'_'source' and removing all spaces and special characters
     data = query_postgresql(pg_creds, "SELECT   *, REGEXP_REPLACE(CONCAT(nct_id, '_', source), '[^a-zA-Z0-9_]', '', 'g') AS linkedin_jobs_key FROM studies")
