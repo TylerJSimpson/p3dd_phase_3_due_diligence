@@ -31,7 +31,8 @@ def read_bq():
     """
     
     # Instantiate the BigQuery client
-    client = bigquery.Client()
+    #client = bigquery.Client()
+    client = bigquery.Client(project="dtc-de-0315")
     
     # Define the query
     query = """
@@ -134,7 +135,7 @@ def write_bq(data: pd.DataFrame) -> None:
     Appends on each run
     """
 
-    gcp_credentials_block = GcpCredentials.load("zoom-gcp-creds")
+    gcp_credentials_block = GcpCredentials.load("p3dd-gcp-credentials")
 
     data.to_gbq(
         destination_table="bronze.linkedin_jobs",
@@ -159,7 +160,7 @@ def linkedin_to_gcs_and_bq():
     write_parquet_file(data, parquet_file)
 
     #Upload parquet to GCS
-    upload_to_gcs(parquet_file, 'zoom-gcs', f'project/bronze/linkedin_jobs/{parquet_file}')
+    upload_to_gcs(parquet_file, 'p3dd-gcs-bucket', f'project/bronze/linkedin_jobs/{parquet_file}')
 
     #Delete local file
     delete_local_file(parquet_file)

@@ -89,7 +89,7 @@ def write_bq(data: pd.DataFrame) -> None:
     Replaces (truncate + write) on each run
     """
 
-    gcp_credentials_block = GcpCredentials.load("zoom-gcp-creds")
+    gcp_credentials_block = GcpCredentials.load("p3dd-gcp-credentials")
 
     data.to_gbq(
         destination_table="bronze.aact_studies",
@@ -104,7 +104,7 @@ def write_bq(data: pd.DataFrame) -> None:
 def write_bq(data: pd.DataFrame) -> None:
     """Write DataFrame to BigQuery"""
 
-    gcp_credentials_block = GcpCredentials.load("zoom-gcp-creds")
+    gcp_credentials_block = GcpCredentials.load("p3dd-gcp-credentials")
 
     client = bigquery.Client(project="dtc-de-0315", credentials=gcp_credentials_block.get_credentials_from_service_account())
 
@@ -148,7 +148,7 @@ def aact_postgres_to_gcs_and_bq():
     write_parquet_file(data, parquet_file)
 
     #Upload parquet to GCS
-    upload_to_gcs(parquet_file, 'zoom-gcs', f'project/bronze/aact_studies/{parquet_file}')
+    upload_to_gcs(parquet_file, 'p3dd-gcs-bucket', f'project/bronze/aact_studies/{parquet_file}')
 
     #Delete local file
     delete_local_file(parquet_file)
