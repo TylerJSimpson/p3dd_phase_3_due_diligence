@@ -1,16 +1,16 @@
 ###
-### A complete description of a Prefect Deployment for flow 'linkedin-to-gcs-and-bq'
+### A complete description of a Prefect Deployment for flow 'aact-postgres-to-gcs-and-bq'
 ###
-name: linkedin_to_gcs_and_bq
+name: aact_postgres_to_gcs_and_bq
 description: null
-version: 2c5d963f1c97db76b598ff90b80c945e
+version: 06e157d0ec53f132a3d18116871e1ad6
 # The work queue that will handle this deployment's runs
 work_queue_name: default
 work_pool_name: null
 tags: []
 parameters: {}
 schedule:
-  cron: 30 3 * * *
+  cron: 0 3 * * *
   timezone: null
   day_or: true
 is_schedule_active: null
@@ -29,15 +29,15 @@ infrastructure:
 ###
 ### DO NOT EDIT BELOW THIS LINE
 ###
-flow_name: linkedin-to-gcs-and-bq
+flow_name: aact-postgres-to-gcs-and-bq
 manifest_path: null
 storage: null
-path: /home/tjsimpson/project/prefect_pipelines
-entrypoint: linkedin_to_gcs_and_bq.py:linkedin_to_gcs_and_bq
+path: C:\Users\Tyler Simpson\personal_project_clinicaltrials_2023\personal_project_clinicaltrials_2023\project\prefect_pipelines
+entrypoint: aact_postgres_to_gcs_and_bq.py:aact_postgres_to_gcs_and_bq
 parameter_openapi_schema:
   title: Parameters
   type: object
   properties: {}
   required: null
   definitions: null
-timestamp: '2023-04-02T20:18:56.026566+00:00'
+timestamp: '2023-04-11T23:15:34.814324+00:00'
