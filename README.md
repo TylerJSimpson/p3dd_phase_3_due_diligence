@@ -1,4 +1,4 @@
-# Phase 3 Clinical Trials Project (Dec 22 - Present)
+# Phase 3 Clinical Trials Project
 ### Overview:   
 ### Companies with clinical trials in phase 3 are high risk high reward investments. This project aims to mitigate this risk by compiling data for phase 3 clinical trials (ClinicalTrails.gov) with job posting details (LinkedIn.com) for the tracking of company job activity as a potential early indicator of trial success.
 ![Flowchart](https://github.com/TylerJSimpson/personal_project_clinicaltrials_2023/blob/main/Flowchart.jpg)
