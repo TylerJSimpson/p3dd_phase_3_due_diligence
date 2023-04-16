@@ -1,16 +1,34 @@
-# Phase 3 Clinical Trials Project (Dec 22 - Present)
-### Overview:   
-### Companies with clinical trials in phase 3 are high risk high reward investments. This project aims to mitigate this risk by compiling data for phase 3 clinical trials (ClinicalTrails.gov) with job posting details (LinkedIn.com) for the tracking of company job activity as a potential early indicator of trial success.
+# Phase 3 Due Diligence (P3DD) 
+### Companies with clinical trials in phase 3 are high risk high reward investments. P3DD aims to mitigate this risk by compiling data for phase 3 clinical trials with job posting details for the tracking of company job activity as a potential early indicator of trial success.
 ![Flowchart](https://github.com/TylerJSimpson/personal_project_clinicaltrials_2023/blob/main/Flowchart.jpg)
 ___
-### Stage 1: Clinical Trial Data
-* **EXTRACT:** Utilize [AACT PostgreSQL database](https://aact.ctti-clinicaltrials.org/) which populates data from ClinicalTrials.gov and interface with Prefect Python pipeline
-* **LOAD:** Prefect pipeline loads the data into GCS and BigQuery landing zones
-### Stage 2: Job Data
-* **EXTRACT:** Prefect pipeline queries Clinical Trial Data and parses companies to LinkedIn to extract the number of jobs for each company  
-* **LOAD:** Prefect pipeline loads the data into GCS and BigQuery landing zones
-### Stage 3: Serve Data
-### Stage 4: ETL Sentiment Data
+### National Clinical Trial data (nct)
+#### Utilize [AACT PostgreSQL database](https://aact.ctti-clinicaltrials.org/) which populates data from ClinicalTrials.gov.
+Pipeline(s):
+* placeholder
+Table(s):
+* placeholder
+
+### Company data (source)
+#### Utilize [OpenFIGI](https://www.openfigi.com/) which contains company data based on their Financial Instrument Global Identifier (FIGI).
+Pipeline(s):
+* placeholder
+Table(s):
+* placeholder
+
+### nct to source mapping
+#### Manual mapping used to map the source field (unclean company name) from the nct data with the name field (clean company name) from the source FIGI data.
+Pipeline(s):
+* placeholder
+Table(s):
+* placeholder
+
+### jobs data
+#### Utilize Linkedin to parse company names and compile job details.
+Pipeline(s):
+* placeholder
+Table(s):
+* placeholder
 
 ___
 ### Tools:

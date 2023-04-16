@@ -1,7 +1,7 @@
 """
-aact_postgres_to_gcs_and_bq
+nct_postgres_to_gcs_and_bq
 
-(1) Queries AACT Postgres database
+(1) Queries AACT Postgres database to gather National Clinical Trial (nct) data
 (2) Creates Parquet file
 (3) Writes Parquet file to GCS and BigQuery
 """
@@ -40,7 +40,7 @@ def read_postgresql_credentials(config_file_path):
 @task
 def query_postgresql(pg_credentials, query):
     """
-    Queries postgresql AACT database main fact table [studies] and writes it to pandas dataframe
+    Queries postgresql AACT database main fact table [studies] and writes it to Pandas dataframe
     """
     conn = psycopg2.connect(
         host=pg_credentials['host'],
@@ -92,45 +92,12 @@ def write_bq(data: pd.DataFrame) -> None:
     gcp_credentials_block = GcpCredentials.load("p3dd-gcp-credentials")
 
     data.to_gbq(
-        destination_table="bronze.aact_studies",
+        destination_table="bronze.nct",
         project_id="dtc-de-0315",
         credentials=gcp_credentials_block.get_credentials_from_service_account(),
         chunksize=500_000,
         if_exists="replace", #truncate and write
     )
-'''
-#This task will merge although to reduce the cost replace (truncate + write) is being used
-@task()
-def write_bq(data: pd.DataFrame) -> None:
-    """Write DataFrame to BigQuery"""
-
-    gcp_credentials_block = GcpCredentials.load("p3dd-gcp-credentials")
-
-    client = bigquery.Client(project="dtc-de-0315", credentials=gcp_credentials_block.get_credentials_from_service_account())
-
-    job_config = bigquery.QueryJobConfig()
-    job_config.write_disposition = "WRITE_TRUNCATE"  # Replace existing table
-    job_config.destination = bigquery.TableReference.from_string("dtc-de-0315.bronze.aact_studies")
-
-    query = f"""
-    MERGE dtc-de-0315.bronze.aact_studies t
-    USING (
-        SELECT *
-        FROM `{job_config.destination.project}.{job_config.destination.dataset_id}.{job_config.destination.table_id}`
-        UNION ALL
-        SELECT *
-        FROM UNNEST({data.to_dict(orient="records")})
-    ) s
-    ON t.nct_id = s.nct_id
-    WHEN MATCHED THEN
-        UPDATE SET *
-    WHEN NOT MATCHED THEN
-        INSERT *
-    """
-
-    job = client.query(query, job_config=job_config)
-    job.result()
-'''
 
 
 @Flow
@@ -140,15 +107,15 @@ def aact_postgres_to_gcs_and_bq():
     pg_creds = read_postgresql_credentials('../configuration/config.ini')
 
     #This query selects the entire [studies] table and adds the key column linked_jobs_key by combining 'nct_id'_'source' and removing all spaces and special characters
-    data = query_postgresql(pg_creds, "SELECT   *, REGEXP_REPLACE(CONCAT(nct_id, '_', source), '[^a-zA-Z0-9_]', '', 'g') AS linkedin_jobs_key FROM studies")
+    data = query_postgresql(pg_creds, "SELECT * FROM studies")
 
     #Building parquet file
     current_datetime = datetime.datetime.now().strftime('%m%d%Y_%H%M%S')
-    parquet_file = f'aact_studies_{current_datetime}.parquet'
+    parquet_file = f'nct_studies_{current_datetime}.parquet'
     write_parquet_file(data, parquet_file)
 
     #Upload parquet to GCS
-    upload_to_gcs(parquet_file, 'p3dd-gcs-bucket', f'project/bronze/aact_studies/{parquet_file}')
+    upload_to_gcs(parquet_file, 'p3dd-gcs-bucket', f'nct/bronze/{parquet_file}')
 
     #Delete local file
     delete_local_file(parquet_file)
