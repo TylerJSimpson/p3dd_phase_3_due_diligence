@@ -1,8 +1,8 @@
 """
-linkedin_to_gcs_and_bq
+jobs_to_gcs_and_bq
 
-(1) Queries BigQuery
-(2) Sends request to LinkedIn based on company name and returns number of jobs for each company
+(1) Queries BigQuery figi table to get linkedin_source_name
+(2) Sends request to LinkedIn based on linkedin_source_name and returns number of jobs for each company
 (3) Creates Parquet file
 (4) Writes Parquet file to GCS and BigQuery
 """
@@ -24,7 +24,7 @@ import os
 @task
 def read_bq():
     """
-    Queries BigQuery table bronze.aact_studies 
+    Queries BigQuery table bronze.figi
     Returns companies in Phase 2/Phase 3 trials that have submitted an update within the last 3 months    
     Companies are part of industry and are either in testing or have compelted testing
     Writes data to pandas dataframe
@@ -36,16 +36,10 @@ def read_bq():
     
     # Define the query
     query = """
-        SELECT  linkedin_jobs_key,
-                nct_id,
-                source,
+        SELECT  linkedin_source_name,
                 CURRENT_TIMESTAMP() AS timestamp
-        FROM    `dtc-de-0315.bronze.aact_studies`
-        WHERE   phase IN ("Phase 3", "Phase 2/Phase 3")
-        AND     overall_status IN ("Active, not recruiting", "Completed")
-        AND     source_class IN ("INDUSTRY")
-        AND     last_update_submitted_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 3 MONTH)
-        AND     source <> "[Redacted]"
+        FROM    `dtc-de-0315.bronze.figi`
+        WHERE   linkedin_source_name IS NOT NULL
     """
     
     # Execute the query
@@ -57,6 +51,7 @@ def read_bq():
     
     return df
 
+'''
 def get_job_openings(source):
     """
     Function to query US LinkedIn when given company name (source) and returns the number of current jobs
@@ -65,7 +60,7 @@ def get_job_openings(source):
         return None
 
     # Construct URL for LinkedIn search page
-    search_url = f"https://www.linkedin.com/jobs/search/?keywords={source}&location=USA"
+    search_url = f"https://www.linkedin.com/jobs/search/?keywords={source}&location=Worldwide"
 
     # Send GET request asynchronously
     with ThreadPoolExecutor(max_workers=1) as executor:
@@ -91,13 +86,42 @@ def get_job_openings(source):
     job_dict = dict(zip(job_titles, company_names))
 
     return len(job_dict)
+'''
+def get_job_openings(source):
+    """
+    Function to query US LinkedIn when given company name (source) and returns the total job search results
+    """
+    if not source:
+        return None
+
+    # Construct URL for LinkedIn search page
+    search_url = f"https://www.linkedin.com/jobs/search/?keywords={source}&location=US"
+
+    # Send GET request asynchronously
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(requests.get, search_url)
+        response = future.result()
+
+    # Parse HTML response
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    result_element = soup.find("span", {"class": "results-context-header__job-count"})
+    result_text = result_element.text.strip() if result_element else "0"
+
+    # Remove special characters like "+" and ","
+    result_text = result_text.replace("+", "")
+    result_text = result_text.replace(",", "")
+
+    return result_text
+
+
 
 @task
 def add_num_jobs(df):
     """
-    For each company name (source) in pandas dataframe append the number of jobs from the function get_job_openings
+    For each company name (linkedin_source_name) in pandas dataframe append the number of jobs from the function get_job_openings
     """
-    df['num_jobs'] = df['source'].apply(get_job_openings)
+    df['num_jobs'] = df['linkedin_source_name'].apply(get_job_openings)
     
     # Handle the case where get_job_openings returns None
     df['num_jobs'] = df['num_jobs'].fillna(0).astype(int)
@@ -131,14 +155,14 @@ def delete_local_file(file_path):
 @task()
 def write_bq(data: pd.DataFrame) -> None:
     """
-    Write pandas dataframe to BiqQuery table bronze.linkedin_jobs
+    Write pandas dataframe to BiqQuery table bronze.jobs
     Appends on each run
     """
 
     gcp_credentials_block = GcpCredentials.load("p3dd-gcp-credentials")
 
     data.to_gbq(
-        destination_table="bronze.linkedin_jobs",
+        destination_table="bronze.jobs",
         project_id="dtc-de-0315",
         credentials=gcp_credentials_block.get_credentials_from_service_account(),
         chunksize=500_000,
@@ -146,7 +170,7 @@ def write_bq(data: pd.DataFrame) -> None:
     )
 
 @Flow
-def linkedin_to_gcs_and_bq():
+def jobs_linkedin_to_gcs_and_bq():
 
     #Queries BigQuery and writes to pandas dataframe
     data = read_bq()
@@ -156,11 +180,11 @@ def linkedin_to_gcs_and_bq():
 
     #Building parquet file
     current_datetime = datetime.datetime.now().strftime('%m%d%Y_%H%M%S')
-    parquet_file = f'linkedin_jobs_{current_datetime}.parquet'
+    parquet_file = f'jobs_{current_datetime}.parquet'
     write_parquet_file(data, parquet_file)
 
     #Upload parquet to GCS
-    upload_to_gcs(parquet_file, 'p3dd-gcs-bucket', f'project/bronze/linkedin_jobs/{parquet_file}')
+    upload_to_gcs(parquet_file, 'p3dd-gcs-bucket', f'jobs/bronze/{parquet_file}')
 
     #Delete local file
     delete_local_file(parquet_file)
@@ -169,4 +193,4 @@ def linkedin_to_gcs_and_bq():
     write_bq(data)
 
 if __name__ == '__main__':
-    linkedin_to_gcs_and_bq()
+    jobs_linkedin_to_gcs_and_bq()
