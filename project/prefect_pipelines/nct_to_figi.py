@@ -1,10 +1,10 @@
 """
-nct_source_mapping
+nct_to_figi
 
-(1) Queries nct table in BigQuery to retrieve [source] and [nct_id] where [source] is unclean company name
+(1) Queries nct table in BigQuery to retrieve [source] where [source] is an unclean company name
 (2) Writes results to parquet file and upload to GCS
-(3) Queries nct_source_mapping table in BigQuery to compare previous dataframe to create a new dataframe where only new [nct_id] are grabbed
-(4) WWrites the new dataframe with only new [nct_id] and corresponding [source]
+(3) Queries figi table in BigQuery to compare previous dataframe to create a new dataframe where only new [source] are grabbed
+(4) Writes the new dataframe with only new [nct_id] and corresponding [source]
 """
 
 #import packages
@@ -85,7 +85,7 @@ def delete_local_file(file_path):
 @task
 def compare_dataframes(data):
     """
-    Reads data from BigQuery table bronze.nct_source_mapping and compares it with the new dataframe
+    Reads data from BigQuery table bronze.figi and compares it with the new dataframe
     Returns only the rows from the new dataframe where the nct_id does not exist in the existing dataframe
     """
     client = bigquery.Client(project="dtc-de-0315")
@@ -93,7 +93,7 @@ def compare_dataframes(data):
     # Define the query to read existing data from BigQuery
     query = """
         SELECT nct_source_name
-        FROM `dtc-de-0315.bronze.nct_source_mapping`
+        FROM `dtc-de-0315.bronze.figi`
     """
 
     # Execute the query and convert the results to a pandas dataframe
@@ -113,15 +113,15 @@ def compare_dataframes(data):
 @task()
 def write_bq(df_diff: pd.DataFrame) -> None:
     """
-    Write pandas dataframe to BiqQuery table bronze.nct_source_mapping
-    Merges data with existing table based on nct_id column
-    Appends new rows if nct_id does not exist
+    Write pandas dataframe to BiqQuery table bronze.figi
+    Merges data with existing table based on [nct_source_name] column
+    Appends new rows if [nct_source_name] does not exist
     """
 
     gcp_credentials_block = GcpCredentials.load("p3dd-gcp-credentials")
 
     df_diff.to_gbq(
-        destination_table="bronze.nct_source_mapping",
+        destination_table="bronze.figi",
         project_id="dtc-de-0315",
         credentials=gcp_credentials_block.get_credentials_from_service_account(),
         chunksize=500_000,
@@ -130,18 +130,18 @@ def write_bq(df_diff: pd.DataFrame) -> None:
 
 
 @Flow
-def nct_source_mapping():
+def nct_to_figi():
 
     #Queries BigQuery and writes to pandas dataframe
     data = read_bq_nct()
 
     #Building parquet file
     current_datetime = datetime.datetime.now().strftime('%m%d%Y_%H%M%S')
-    parquet_file = f'nct_source_mapping_{current_datetime}.parquet'
+    parquet_file = f'nct_source_name_{current_datetime}.parquet'
     write_parquet_file(data, parquet_file)
 
     #Upload parquet to GCS
-    upload_to_gcs(parquet_file, 'p3dd-gcs-bucket', f'nct_source_mapping/bronze/{parquet_file}')
+    upload_to_gcs(parquet_file, 'p3dd-gcs-bucket', f'nct_source_name/bronze/{parquet_file}')
 
     #Delete local file
     delete_local_file(parquet_file)
@@ -153,4 +153,4 @@ def nct_source_mapping():
     write_bq(df_diff)
 
 if __name__ == '__main__':
-    nct_source_mapping()
+    nct_to_figi()
