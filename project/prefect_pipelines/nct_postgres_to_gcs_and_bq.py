@@ -6,6 +6,7 @@ nct_postgres_to_gcs_and_bq
 (3) Writes Parquet file to GCS and BigQuery
 """
 
+
 #Import packages
 import psycopg2
 import pandas as pd
@@ -20,7 +21,7 @@ import datetime
 import os
 
 
-@task
+@task(retries=3)
 def read_postgresql_credentials(config_file_path):
     """
     Reads postgresql credentials from local filepath on vm and assigns them to variables
@@ -37,7 +38,7 @@ def read_postgresql_credentials(config_file_path):
     }
 
 
-@task
+@task(retries=3)
 def query_postgresql(pg_credentials, query):
     """
     Queries postgresql AACT database main fact table [studies] and writes it to Pandas dataframe
@@ -56,7 +57,7 @@ def query_postgresql(pg_credentials, query):
     return df
 
 
-@task
+@task(retries=3)
 def write_parquet_file(df, file_path):
     """
     Write pandas dataframe to parquet file
@@ -65,16 +66,18 @@ def write_parquet_file(df, file_path):
     pq.write_table(table, file_path)
 
 
-@task
+'''
+#This task is currently failing because it is exceeding the 60 sec timeout there does not seem to be a way to fix this with Prefect and may need to use GCS packages
+@task(retries=3)
 def upload_to_gcs(file_path, bucket_name, destination_blob_name):
     """
     Uploads parquet file to GCS
     """
     gcs_bucket = GcsBucket.load(bucket_name)
     gcs_bucket.upload_from_path(from_path=file_path, to_path=destination_blob_name)
+'''
 
-
-@task
+@task(retries=3)
 def delete_local_file(file_path):
     """
     Deletes local file on vm due to GCS being used as the primary storage
@@ -82,7 +85,7 @@ def delete_local_file(file_path):
     os.remove(file_path)
 
 
-@task()
+@task(retries=3)
 def write_bq(data: pd.DataFrame) -> None:
     """
     Write pandas dataframe to BiqQuery table bronze.aact_studies
@@ -106,7 +109,7 @@ def aact_postgres_to_gcs_and_bq():
     #Get Postgresql credentials from local config file
     pg_creds = read_postgresql_credentials('../configuration/config.ini')
 
-    #This query selects the entire [studies] table and adds the key column linked_jobs_key by combining 'nct_id'_'source' and removing all spaces and special characters
+    #This query selects the entire [studies] table
     data = query_postgresql(pg_creds, "SELECT * FROM studies")
 
     #Building parquet file
@@ -114,8 +117,10 @@ def aact_postgres_to_gcs_and_bq():
     parquet_file = f'nct_studies_{current_datetime}.parquet'
     write_parquet_file(data, parquet_file)
 
+    '''
     #Upload parquet to GCS
     upload_to_gcs(parquet_file, 'p3dd-gcs-bucket', f'nct/bronze/{parquet_file}')
+    '''
 
     #Delete local file
     delete_local_file(parquet_file)
