@@ -1,4 +1,4 @@
-# P3DD - Phase 3 Due Dilligence
+# P3DD - Phase 3 Due Diligence
 ### Companies with clinical trials in phase 3 are high risk high reward investments. P3DD aims to mitigate this risk by compiling national clinical trial data for companies who are currently in phase 3 testing or have recently completed it. These companies are assigned to their Financial Instrument Global Identifier (FIGI) and registered name. This name is then used to parse Linkedin for daily job count updates. 
 ![Flowchart](https://github.com/TylerJSimpson/personal_project_clinicaltrials_2023/blob/main/P3DD_Flowchart.jpg)
 ___
