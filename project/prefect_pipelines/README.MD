@@ -1,70 +1,61 @@
-# Prefect Pipelines Details
-Generalized instructions for setup and running the prefect pipelines for the clinicaltrials_2023 project.   
+# Prefect
+## Python Data Pipelines
+Prefect is an orchestration framework that utilizes Python.  
+It operates by assigning functions to tasks and calls them via a function assigned as the flow.  
+Below you will find details on the python pipelines and the extract, transform, and load logic they contain as well as general setup instructions.  
+
+## Pipelines
+
+### [nct_postgres_to_gcs_and_bq.py](https://github.com/TylerJSimpson/p3dd_phase_3_due_diligence/blob/main/project/prefect_pipelines/nct_postgres_to_gcs_and_bq.py)
+This pipeline extracts data from the [AACT database](https://aact.ctti-clinicaltrials.org/) and writes it to GCS and truncate and writes to BigQuery.
+### [nct_to_figi.py](https://github.com/TylerJSimpson/p3dd_phase_3_due_diligence/blob/main/project/prefect_pipelines/nct_to_figi.py)
+This pipeline pulls the distinct [source] names which act as unclean company names and writes them to BigQuery where they are cleaned and data is added via the [OpenFIGI API](https://www.openfigi.com/).
+### [jobs_linkedin_to_gcs_and_bq.py](https://github.com/TylerJSimpson/p3dd_phase_3_due_diligence/blob/main/project/prefect_pipelines/jobs_linkedin_to_gcs_and_bq.py)
+This pipeline pulls the distinct [source] names that are clean and parses Linkedin to return job data to append to BigQuery.
 
 ## Setup
+
+### Installation
+Install Prefect:
+```bash
+pip install -U prefect
+```
 
 Ensure you are in the python environment:
 ```bash
 conda activate zoom
 ```
 
-Authorize gcloud:
+Authorize gcloud (if using GCP infrastructure):
 ```bash
 gcloud auth application-default login
 ```
 
-Prefect must be running:
+Run Prefect engine:
 ```
 prefect orion start
 ```
 
-If running a deployment the work queue must also be running in tandem with above:
+If running a deployment the work queue must also be running in tandem with the Prefect engine:
 ```bash
 prefect agent start  --work-queue "default"
 ```
 
 Port 4200 must also be forwarded to be able to connect to web UI via localhost:4200
 
-## Pipelines
+### Interacting with Prefect
 
-### aact_postgres_to_gcs_and_bq.py
-This pipeline moves data from the public AACT database to GCS bucket and BigQuery.  
-[aact_postgres_to_gcs_and_bq.py](https://github.com/TylerJSimpson/personal_project_clinicaltrials_2023/blob/main/project/prefect_pipelines/aact_postgres_to_gcs_and_bq.py)  
-[aact_postgres_to_gcs_and_bq.yaml](https://github.com/TylerJSimpson/personal_project_clinicaltrials_2023/blob/main/project/prefect_pipelines/aact_postgres_to_gcs_and_bq.yaml)  
-  
-run flow manually locally:
+Flows can be ran manually if the Prefect engine is running:
 ```bash
-python aact_postgres_to_gcs_and_bq.py
+python your_prefect_pipeline_name.py
 ```
-  
-#### Deployment  
-Scheduling build for 3:00 AM daily as the AACT database refreshes at 12:00 AM daily except Saturday which is a ~24 hours refresh but the data is available during this time.  
-.yaml file created automatically when creating build:
+
+Pipeline can be deployed with cron scheduling which requires the work queue to be running: 
+Note when creating a build a .yaml file will be created.  
 ```bash
-prefect deployment build ./aact_postgres_to_gcs_and_bq.py:aact_postgres_to_gcs_and_bq -n "aact_postgres_to_gcs_and_bq" --cron "0 3 * * *" -a
+prefect deployment build ./your_prefect_pipeline_name.py:your_prefect_flow_name -n "your_chosen_deployment_name" --cron "30 3 * * *" -a
 ```
 Confirm build deployment:  
 ```
-prefect deployment apply aact_postgres_to_gcs_and_bq.yaml
-```
-
-### linkedin_to_gcs_and_bq.py
-PLACEHOLDER.  
-[linkedin_to_gcs_and_bq.py](https://github.com/TylerJSimpson/personal_project_clinicaltrials_2023/blob/main/project/prefect_pipelines/linkedin_to_gcs_and_bq.py)  
-[linkedin_to_gcs_and_bq.py.yaml](https://github.com/TylerJSimpson/personal_project_clinicaltrials_2023/blob/main/project/prefect_pipelines/aact_postgres_to_gcs_and_bq.yaml)  
-  
-run flow manually locally:
-```bash
-python aact_postgres_to_gcs_and_bq.py
-```
-  
-#### Deployment  
-Scheduling build for 3:30 AM daily as the previous pipeline runs at 3:00 AM.  
-.yaml file created automatically when creating build:
-```bash
-prefect deployment build ./linkedin_to_gcs_and_bq.py:linkedin_to_gcs_and_bq -n "linkedin_to_gcs_and_bq" --cron "30 3 * * *" -a
-```
-Confirm build deployment:  
-```
-prefect deployment apply aact_postgres_to_gcs_and_bq-deployment.yaml
+prefect deployment apply your_chosen_deployment_name-deployment.yaml
 ```
