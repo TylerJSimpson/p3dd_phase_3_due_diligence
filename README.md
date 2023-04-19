@@ -1,7 +1,7 @@
 # Phase 3 Clinical Trials Project
 ### Overview:   
 ### Companies with clinical trials in phase 3 are high risk high reward investments. This project aims to mitigate this risk by compiling data for phase 3 clinical trials (ClinicalTrails.gov) with job posting details (LinkedIn.com) for the tracking of company job activity as a potential early indicator of trial success.
-![Flowchart](https://github.com/TylerJSimpson/personal_project_clinicaltrials_2023/blob/main/Flowchart.jpg)
+![Flowchart](https://github.com/TylerJSimpson/personal_project_clinicaltrials_2023/blob/main/P3DD_Flowchart.jpg)
 ___
 ### Stage 1: Clinical Trial Data
 * **EXTRACT:** Utilize [AACT PostgreSQL database](https://aact.ctti-clinicaltrials.org/) which populates data from ClinicalTrials.gov and interface with Prefect Python pipeline
