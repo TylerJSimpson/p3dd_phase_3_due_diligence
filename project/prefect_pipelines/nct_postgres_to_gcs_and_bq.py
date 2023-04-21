@@ -65,9 +65,7 @@ def write_parquet_file(df, file_path):
     table = pa.Table.from_pandas(df)
     pq.write_table(table, file_path)
 
-
 '''
-#This task is currently failing because it is exceeding the 60 sec timeout there does not seem to be a way to fix this with Prefect and may need to use GCS packages
 @task(retries=3)
 def upload_to_gcs(file_path, bucket_name, destination_blob_name):
     """
