@@ -1,5 +1,5 @@
 """
-jobs_to_gcs_and_bq
+jobs_linkedin_to_gcs_and_bq
 
 (1) Queries BigQuery figi table to get linkedin_source_name
 (2) Sends request to LinkedIn based on linkedin_source_name and returns number of jobs for each company
@@ -128,13 +128,13 @@ def add_num_jobs(df):
 
     return df
 
-@task
-def write_parquet_file(df, file_path):
+@task(retries=3)
+def write_parquet_file(df, file_path, compression='snappy'):
     """
     Write pandas dataframe to parquet file
     """
     table = pa.Table.from_pandas(df)
-    pq.write_table(table, file_path)
+    pq.write_table(table, file_path, compression=compression)
 
 
 @task

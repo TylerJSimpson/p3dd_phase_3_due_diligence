@@ -56,13 +56,13 @@ def read_bq_nct():
     return df
 
 
-@task
-def write_parquet_file(df, file_path):
+@task(retries=3)
+def write_parquet_file(df, file_path, compression='snappy'):
     """
     Write pandas dataframe to parquet file
     """
     table = pa.Table.from_pandas(df)
-    pq.write_table(table, file_path)
+    pq.write_table(table, file_path, compression=compression)
 
 
 @task

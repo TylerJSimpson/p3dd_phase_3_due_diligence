@@ -58,14 +58,14 @@ def query_postgresql(pg_credentials, query):
 
 
 @task(retries=3)
-def write_parquet_file(df, file_path):
+def write_parquet_file(df, file_path, compression='snappy'):
     """
     Write pandas dataframe to parquet file
     """
     table = pa.Table.from_pandas(df)
-    pq.write_table(table, file_path)
+    pq.write_table(table, file_path, compression=compression)
 
-'''
+
 @task(retries=3)
 def upload_to_gcs(file_path, bucket_name, destination_blob_name):
     """
@@ -73,7 +73,7 @@ def upload_to_gcs(file_path, bucket_name, destination_blob_name):
     """
     gcs_bucket = GcsBucket.load(bucket_name)
     gcs_bucket.upload_from_path(from_path=file_path, to_path=destination_blob_name)
-'''
+
 
 @task(retries=3)
 def delete_local_file(file_path):
@@ -115,10 +115,10 @@ def aact_postgres_to_gcs_and_bq():
     parquet_file = f'nct_studies_{current_datetime}.parquet'
     write_parquet_file(data, parquet_file)
 
-    '''
+
     #Upload parquet to GCS
     upload_to_gcs(parquet_file, 'p3dd-gcs-bucket', f'nct/bronze/{parquet_file}')
-    '''
+
 
     #Delete local file
     delete_local_file(parquet_file)
