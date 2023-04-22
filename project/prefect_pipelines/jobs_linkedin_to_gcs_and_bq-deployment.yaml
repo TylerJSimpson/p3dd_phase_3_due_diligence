@@ -1,0 +1,43 @@
+###
+### A complete description of a Prefect Deployment for flow 'jobs-linkedin-to-gcs-and-bq'
+###
+name: jobs_linkedin_to_gcs_and_bq
+description: null
+version: 1960348b880963763d4f8118a67dcf9b
+# The work queue that will handle this deployment's runs
+work_queue_name: default
+work_pool_name: null
+tags: []
+parameters: {}
+schedule:
+  cron: '* 4 * * *'
+  timezone: null
+  day_or: true
+is_schedule_active: null
+infra_overrides: {}
+infrastructure:
+  type: process
+  env: {}
+  labels: {}
+  name: null
+  command: null
+  stream_output: true
+  working_dir: null
+  block_type_slug: process
+  _block_type_slug: process
+
+###
+### DO NOT EDIT BELOW THIS LINE
+###
+flow_name: jobs-linkedin-to-gcs-and-bq
+manifest_path: null
+storage: null
+path: C:\Users\simps\p3dd_phase_3_due_diligence\project\prefect_pipelines
+entrypoint: jobs_linkedin_to_gcs_and_bq.py:jobs_linkedin_to_gcs_and_bq
+parameter_openapi_schema:
+  title: Parameters
+  type: object
+  properties: {}
+  required: null
+  definitions: null
+timestamp: '2023-04-22T19:16:32.465029+00:00'

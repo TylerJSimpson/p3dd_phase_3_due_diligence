@@ -26,6 +26,17 @@ Ensure you are in the python environment:
 conda activate zoom
 ```
 
+If using a venv..  
+Create venv:
+```
+python -m venv p3ddenv
+```
+
+Activate venv:
+```
+source p3ddenv/Scripts/activate
+```
+
 Authorize gcloud (if using GCP infrastructure):
 ```bash
 gcloud auth application-default login
@@ -38,7 +49,7 @@ prefect orion start
 
 If running a deployment the work queue must also be running in tandem with the Prefect engine:
 ```bash
-prefect agent start  --work-queue "default"
+prefect agent start --pool default-agent-pool --work-queue default
 ```
 
 Port 4200 must also be forwarded to be able to connect to web UI via localhost:4200

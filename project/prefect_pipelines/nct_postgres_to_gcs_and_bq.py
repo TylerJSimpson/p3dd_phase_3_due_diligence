@@ -105,7 +105,8 @@ def write_bq(data: pd.DataFrame) -> None:
 def aact_postgres_to_gcs_and_bq():
  
     #Get Postgresql credentials from local config file
-    pg_creds = read_postgresql_credentials('../configuration/config.ini')
+    pg_creds = read_postgresql_credentials('C:\\Users\simps\p3dd_phase_3_due_diligence\project\configuration\config.ini') #using this as relative path not working in deployment with Windows
+    '''pg_creds = read_postgresql_credentials('../configuration/config.ini')'''
 
     #This query selects the entire [studies] table
     data = query_postgresql(pg_creds, "SELECT * FROM studies")
