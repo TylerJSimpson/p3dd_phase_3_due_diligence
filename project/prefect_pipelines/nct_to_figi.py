@@ -82,7 +82,7 @@ def delete_local_file(file_path):
     os.remove(file_path)
 
 
-@task
+'''@task
 def compare_dataframes(data):
     """
     Reads data from BigQuery table bronze.figi and compares it with the new dataframe
@@ -106,6 +106,36 @@ def compare_dataframes(data):
     # Add 'start_date' column to ensure new source company names have a start date for the SCD
     df_diff['start_date'] = pd.Timestamp.now().strftime('%Y-%m-%d')
 
+
+    return df_diff'''
+
+@task
+def compare_dataframes(data):
+    """
+    Reads data from BigQuery table bronze.figi and compares it with the new dataframe
+    Returns only the rows from the new dataframe where the nct_id does not exist in the existing dataframe
+    """
+    client = bigquery.Client(project="dtc-de-0315")
+
+    # Define the query to read existing data from BigQuery
+    query = """
+        SELECT nct_source_name, figi_primary_key
+        FROM `dtc-de-0315.bronze.figi`
+    """
+
+    # Execute the query and convert the results to a pandas dataframe
+    query_job = client.query(query)
+    df_existing = query_job.to_dataframe()
+
+    # Find the nct_id values in the new dataframe that are not present in the existing dataframe
+    df_diff = data[~data.nct_source_name.isin(df_existing.nct_source_name)]
+
+    # Add 'start_date' column to ensure new source company names have a start date for the SCD
+    df_diff['start_date'] = pd.Timestamp.now().strftime('%Y-%m-%d')
+
+    # Find the maximum value of the figi_primary_key field in the existing dataframe and increment it by 1 for each new row
+    max_figi_primary_key = df_existing['figi_primary_key'].max()
+    df_diff['figi_primary_key'] = range(max_figi_primary_key + 1, max_figi_primary_key + 1 + len(df_diff))
 
     return df_diff
 

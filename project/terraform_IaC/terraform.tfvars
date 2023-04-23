@@ -1,0 +1,6 @@
+project_id = "my-new-project"
+billing_account = "my-billing-account"
+gcs_bucket_name = "my-bucket-name"
+region = "my-region-name"
+bigquery_dataset_name = "my-bigquery-name"
+service_account_name = "my-service-account-name"
