@@ -1,3 +1,13 @@
+variable "environment" {
+  description = "The environment of the GCP project ie 'prd', 'uat', 'dev'"
+  type        = string
+}
+
+variable "increment" {
+  type        = string
+  description = "The increment of the GCP project ie '001', '002', '003'"
+}
+
 variable "project_id" {
   type        = string
   description = "The ID of the GCP project to create"
