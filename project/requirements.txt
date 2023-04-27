@@ -9,3 +9,4 @@ pyarrow
 python-dateutil
 requests
 pandas-gbq
+python-terraform
