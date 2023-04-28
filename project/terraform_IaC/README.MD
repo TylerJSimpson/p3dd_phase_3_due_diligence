@@ -44,7 +44,16 @@ terraform destroy
 
 ## Infrastructure
 
-### main.tf
-[main.tf](https://github.com/TylerJSimpson/data_engineering_zoomcamp/blob/main/week_1/terraform/main.tf) includes the Terraform code for a GCP project, cloud storage (GCS), and cloud datawarehouse (BigQuery).
+### Main
+[main.tf](https://github.com/TylerJSimpson/p3dd_phase_3_due_diligence/blob/main/project/terraform_IaC/main.tf) is the main configuration file used by Terraform to define and manage infrastructure resources.  
 
+### Variables
+[variables.tf](https://github.com/TylerJSimpson/p3dd_phase_3_due_diligence/blob/main/project/terraform_IaC/variables.tf) defines the variables used in the main.tf file.  
+[terraform.tfvars](https://github.com/TylerJSimpson/p3dd_phase_3_due_diligence/blob/main/project/terraform_IaC/terraform.tfvars) assigns values to the variables in the variables.tf file.  
 
+### Sub Infrastructure
+It is possible to separate out infrastructure from the main.tf and call it from the main.tf.  
+Here this is done for the separate BigQuery tables as the schemas can be quite large.  
+[bronze_nct.tf](https://github.com/TylerJSimpson/p3dd_phase_3_due_diligence/blob/main/project/terraform_IaC/bigquery/bronze_nct.tf)  
+[bronze_figi.tf](https://github.com/TylerJSimpson/p3dd_phase_3_due_diligence/blob/main/project/terraform_IaC/bigquery/bronze_figi.tf)  
+[bronze_jobs.tf](https://github.com/TylerJSimpson/p3dd_phase_3_due_diligence/blob/main/project/terraform_IaC/bigquery/bronze_jobs.tf)  

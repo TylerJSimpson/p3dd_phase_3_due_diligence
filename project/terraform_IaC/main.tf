@@ -96,44 +96,14 @@ resource "google_bigquery_dataset" "bigquery_dataset_bronze" {
   default_table_expiration_ms = "3600000"
 }
 
-resource "google_bigquery_table" "default" {
-  dataset_id = google_bigquery_dataset.bigquery_dataset_bronze.dataset_id
-  table_id   = "jobs"
-  project    = google_project.project.project_id
+module "bigquery_bronze" {
+  source = "./bigquery"
 
-  labels = {
-    env = "${var.environment}"
-  }
+  environment = var.environment
+  increment   = var.increment
 
-  schema = <<EOF
-[
-  {
-    "name": "figi_primary_key",
-    "type": "INTEGER",
-    "mode": "NULLABLE",
-    "description": "Placeholder"
-  },
-  {
-    "name": "linkedin_source_name",
-    "type": "STRING",
-    "mode": "NULLABLE",
-    "description": "Placeholder"
-  },
-  {
-    "name": "num_jobs",
-    "type": "INTEGER",
-    "mode": "NULLABLE",
-    "description": "Placeholder"
-  },
-  {
-    "name": "timestamp",
-    "type": "TIMESTAMP",
-    "mode": "NULLABLE",
-    "description": "Placeholder"
-  }    
-]
-EOF
-
+  project_id        = google_project.project.project_id
+  dataset_id_bronze = google_bigquery_dataset.bigquery_dataset_bronze.dataset_id
 }
 
 output "service_account_email" {
