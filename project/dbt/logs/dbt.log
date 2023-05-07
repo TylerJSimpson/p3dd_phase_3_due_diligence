@@ -1,0 +1,27 @@
+[0m19:47:48.849817 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000018F27F755B0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000018F23F11070>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000018F29ED53A0>]}
+
+
+============================== 19:47:48.853817 | 559528b1-ad49-4fd8-ae62-0533d8df8c49 ==============================
+[0m19:47:48.853817 [info ] [MainThread]: Running with dbt=1.5.0
+[0m19:47:48.854817 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'write_json': 'True', 'log_cache_events': 'False', 'partial_parse': 'True', 'cache_selected_only': 'False', 'warn_error': 'None', 'fail_fast': 'False', 'profiles_dir': 'C:/Users/simps/p3dd_phase_3_due_diligence/project/dbt', 'log_path': 'logs', 'debug': 'False', 'version_check': 'True', 'use_colors': 'True', 'use_experimental_parser': 'False', 'no_print': 'None', 'quiet': 'False', 'log_format': 'default', 'introspect': 'True', 'static_parser': 'True', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'target_path': 'None', 'send_anonymous_usage_stats': 'True'}
+[0m19:48:03.701035 [debug] [MainThread]: Starter project path: C:\Users\simps\p3dd_phase_3_due_diligence\project\prefect_pipelines\p3ddenv\lib\site-packages\dbt\include\starter_project
+[0m19:55:40.288147 [info ] [MainThread]: Profile p3dd written to C:\Users\simps\p3dd_phase_3_due_diligence\project\dbt\profiles.yml using target's profile_template.yml and your supplied values. Run 'dbt debug' to validate the connection.
+[0m19:55:40.290146 [info ] [MainThread]: 
+Your new dbt project "p3dd" was created!
+
+For more information on how to configure the profiles.yml file,
+please consult the dbt documentation here:
+
+  https://docs.getdbt.com/docs/configure-your-profile
+
+One more thing:
+
+Need help? Don't hesitate to reach out to us via GitHub issues or on Slack:
+
+  https://community.getdbt.com/
+
+Happy modeling!
+
+[0m19:55:40.294150 [debug] [MainThread]: Command `dbt init` succeeded at 19:55:40.293149 after 471.47 seconds
+[0m19:55:40.295156 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000018F27F755B0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000018F23F117C0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000018F282E7B20>]}
+[0m19:55:40.295156 [debug] [MainThread]: Flushing usage events
