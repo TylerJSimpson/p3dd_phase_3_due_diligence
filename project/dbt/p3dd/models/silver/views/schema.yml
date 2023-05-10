@@ -1,34 +1,131 @@
+# silver/jobs_daily_total.yml
 version: 2
+
+sources:
+  - name: bronze
+    tables:
+      - name: jobs
+        description: "The daily number of job postings for each Financial Instrument Global Identifier (FIGI)."
 
 models:
   - name: jobs_daily_total
-    description: "View to get the daily total number of jobs"
-    columns:
-      - name: day
-        description: "The date for which the total number of jobs is calculated"
-        tests:
-          - not_null
-      - name: total_num_jobs
-        description: "The total number of jobs for the given date where the particular company has not previously had any days with total_num_jobs > 1000 to avoid accuracy errors"
-        tests:
-          - not_null
-  - name: v_s_jobs_daily_total
-    description: >
-      Model to calculate the growth percentage of daily jobs by FIGI source and ticker
-    materialized: table
-    columns:
-      - name: figi_source_name
-        description: The name of the FIGI source
-      - name: ticker
-        description: The ticker symbol
-      - name: prev_day_num_jobs
-        description: The number of jobs from the previous day
-      - name: curr_day_num_jobs
-        description: The number of jobs from the current day
-      - name: growth_pct
-        description: The growth percentage from the previous day to the current day
-        meta:
-          dbt_utils:
-            percent:
-              numerator: "{{ curr_day_num_jobs - prev_day_num_jobs }}"
-              denominator: "{{ prev_day_num_jobs }}"
+    description: "Aggregates the daily number of job postings for each Financial Instrument Global Identifier (FIGI). Excludes FIGIs with any day where the number of job postings is greater than or equal to 1000."
+    alias: jobs_daily_total
+    materialized: view
+    schema: silver
+    sql: >
+      SELECT  DATE(DATE_TRUNC(timestamp, DAY)) AS day,
+              SUM(num_jobs) AS total_num_jobs
+      FROM    {{ ref('bronze.jobs') }}
+      WHERE   figi_primary_key NOT IN (
+                  SELECT figi_primary_key
+                  FROM {{ ref('bronze.jobs') }}
+                  WHERE num_jobs >= 1000
+                  GROUP BY figi_primary_key
+              )
+      GROUP   BY day
+      HAVING  MAX(num_jobs) < 1000
+
+# silver/jobs_daily_growth.yml
+version: 2
+
+sources:
+  - name: bronze
+    tables:
+      - name: jobs
+        description: "The daily number of job postings for each Financial Instrument Global Identifier (FIGI)."
+      - name: figi
+        description: "Financial Instrument Global Identifier (FIGI) information."
+
+models:
+  - name: jobs_daily_growth
+    description: "Calculates the daily percentage growth in the number of job postings for each Financial Instrument Global Identifier (FIGI)."
+    alias: jobs_daily_growth
+    materialized: view
+    schema: silver
+    sql: >
+      SELECT  figi.figi_source_name,
+              figi.ticker,
+              prev.num_jobs AS prev_day_num_jobs,
+              curr.num_jobs AS curr_day_num_jobs,
+              CASE 
+                WHEN prev.num_jobs = 0 THEN NULL
+                ELSE (curr.num_jobs - prev.num_jobs) / prev.num_jobs
+              END AS growth_pct
+      FROM    {{ ref('bronze.jobs') }} curr
+              JOIN {{ ref('bronze.jobs') }} prev
+                ON curr.figi_primary_key = prev.figi_primary_key
+                AND DATE(curr.timestamp) = DATE_SUB(DATE(prev.timestamp), INTERVAL 1 DAY)
+              JOIN {{ ref('bronze.figi') }} figi
+                ON curr.figi_primary_key = figi.figi_primary_key
+      ORDER   BY growth_pct DESC
+
+# silver/jobs_weekly_growth.yml
+version: 2
+
+sources:
+  - name: bronze
+    tables:
+      - name: jobs
+        description: "The daily number of job postings for each Financial Instrument Global Identifier (FIGI)."
+      - name: figi
+        description: "Financial Instrument Global Identifier (FIGI) information."
+
+models:
+  - name: jobs_weekly_growth
+    description: "Calculates the weekly percentage growth in the number of job postings for each Financial Instrument Global Identifier (FIGI)."
+    alias: jobs_weekly_growth
+    materialized: view
+    schema: silver
+    sql: >
+      SELECT  figi.figi_source_name,
+              figi.ticker,
+              AVG(prev.num_jobs) AS prev_week_avg_num_jobs,
+              curr.num_jobs AS curr_day_num_jobs,
+              CASE 
+                WHEN AVG(prev.num_jobs) = 0 THEN NULL
+                ELSE (curr.num_jobs - AVG(prev.num_jobs)) / AVG(prev.num_jobs)
+              END AS growth_pct
+      FROM    `dtc-de-0315.bronze.jobs` curr
+              JOIN `dtc-de-0315.bronze.jobs` prev
+                ON curr.figi_primary_key = prev.figi_primary_key
+                AND DATE(curr.timestamp) = DATE_SUB(DATE(prev.timestamp), INTERVAL 7 DAY)
+              JOIN `dtc-de-0315.bronze.figi` figi
+                ON curr.figi_primary_key = figi.figi_primary_key
+      GROUP   BY figi.figi_source_name, figi.ticker, curr.num_jobs
+      ORDER   BY growth_pct DESC
+
+# silver/jobs_monthly_growth.yml
+version: 2
+
+sources:
+  - name: bronze
+    tables:
+      - name: jobs
+        description: "The daily number of job postings for each Financial Instrument Global Identifier (FIGI)."
+      - name: figi
+        description: "Financial Instrument Global Identifier (FIGI) information."
+
+models:
+  - name: jobs_monthly_growth
+    description: "Calculates the monthly percentage growth in the number of job postings for each Financial Instrument Global Identifier (FIGI)."
+    alias: jobs_monthly_growth
+    materialized: view
+    schema: silver
+    sql: >
+      SELECT  figi.figi_source_name,
+              figi.ticker,
+              AVG(prev.num_jobs) AS prev_week_avg_num_jobs,
+              curr.num_jobs AS curr_day_num_jobs,
+              CASE 
+                WHEN AVG(prev.num_jobs) = 0 THEN NULL
+                ELSE (curr.num_jobs - AVG(prev.num_jobs)) / AVG(prev.num_jobs)
+              END AS growth_pct
+      FROM    `dtc-de-0315.bronze.jobs` curr
+              JOIN `dtc-de-0315.bronze.jobs` prev
+                ON curr.figi_primary_key = prev.figi_primary_key
+                AND DATE(curr.timestamp) = DATE_SUB(DATE(prev.timestamp), INTERVAL 30 DAY)
+              JOIN `dtc-de-0315.bronze.figi` figi
+                ON curr.figi_primary_key = figi.figi_primary_key
+      GROUP   BY figi.figi_source_name, figi.ticker, curr.num_jobs
+      ORDER   BY growth_pct DESC
