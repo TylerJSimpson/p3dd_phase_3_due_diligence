@@ -1,26 +1,3 @@
-CREATE MATERIALIZED VIEW `dtc-de-0315.bronze.jobs_daily_growth`
-AS
-SELECT
-  curr.figi_primary_key,
-  prev.num_jobs AS prev_num_jobs,
-  curr.num_jobs AS curr_num_jobs,
-  CASE 
-    WHEN prev.num_jobs = 0 THEN null
-    ELSE (curr.num_jobs - prev.num_jobs) / prev.num_jobs
-  END AS growth_pct
-FROM
-  `dtc-de-0315.bronze.jobs_copy` curr
-JOIN
-  `dtc-de-0315.bronze.jobs_copy` prev
-ON
-  curr.figi_primary_key = prev.figi_primary_key
-  AND DATE(curr.timestamp) = DATE_SUB(DATE(prev.timestamp), INTERVAL 1 DAY)
-ORDER BY
-  growth_pct DESC
-LIMIT
-  25;
-
-
 CREATE MATERIALIZED VIEW `dtc-de-0315.bronze.jobs_weekly_growth`
 AS
 SELECT

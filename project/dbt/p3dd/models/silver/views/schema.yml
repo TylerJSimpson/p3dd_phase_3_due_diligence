@@ -1,0 +1,34 @@
+version: 2
+
+models:
+  - name: jobs_daily_total
+    description: "View to get the daily total number of jobs"
+    columns:
+      - name: day
+        description: "The date for which the total number of jobs is calculated"
+        tests:
+          - not_null
+      - name: total_num_jobs
+        description: "The total number of jobs for the given date where the particular company has not previously had any days with total_num_jobs > 1000 to avoid accuracy errors"
+        tests:
+          - not_null
+  - name: v_s_jobs_daily_total
+    description: >
+      Model to calculate the growth percentage of daily jobs by FIGI source and ticker
+    materialized: table
+    columns:
+      - name: figi_source_name
+        description: The name of the FIGI source
+      - name: ticker
+        description: The ticker symbol
+      - name: prev_day_num_jobs
+        description: The number of jobs from the previous day
+      - name: curr_day_num_jobs
+        description: The number of jobs from the current day
+      - name: growth_pct
+        description: The growth percentage from the previous day to the current day
+        meta:
+          dbt_utils:
+            percent:
+              numerator: "{{ curr_day_num_jobs - prev_day_num_jobs }}"
+              denominator: "{{ prev_day_num_jobs }}"

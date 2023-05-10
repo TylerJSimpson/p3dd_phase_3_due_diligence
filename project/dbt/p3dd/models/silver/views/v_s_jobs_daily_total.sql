@@ -4,8 +4,7 @@
     alias='jobs_daily_total'
 ) }}
 
-SELECT
-        DATE(DATE_TRUNC(timestamp, DAY)) AS day,
+SELECT  DATE(DATE_TRUNC(timestamp, DAY)) AS day,
         SUM(num_jobs) AS total_num_jobs
 FROM    `dtc-de-0315.bronze.jobs`
 WHERE   figi_primary_key NOT IN (
