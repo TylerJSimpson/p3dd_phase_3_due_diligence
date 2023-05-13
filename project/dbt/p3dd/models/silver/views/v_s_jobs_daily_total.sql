@@ -1,6 +1,5 @@
 {{ config(
     materialized='view',
-    schema='silver',
     alias='jobs_daily_total'
 ) }}
 
@@ -15,4 +14,3 @@ WHERE   figi_primary_key NOT IN (
         )
 GROUP   BY day
 HAVING  MAX(num_jobs) < 1000                            --currently accuracy drops above num_jobs of 1000 so these need to be excluded
-;

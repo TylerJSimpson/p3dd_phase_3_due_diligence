@@ -30,3 +30,10 @@ This will prompt you to name your dbt project and ask for details based on the d
 
 ### Interacting with dbt
 
+To initialize as above and test with specific profile directory path:
+```bash
+dbt init --profiles-dir /c/Users/simps/p3dd_phase_3_due_diligence/project/dbt
+```
+```bash
+dbt test --profiles-dir /c/Users/simps/p3dd_phase_3_due_diligence/project/dbt
+```

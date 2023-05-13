@@ -1,6 +1,5 @@
 {{ config(
     materialized='view',
-    schema='silver',
     alias='jobs_daily_growth'
 ) }}
 
@@ -19,4 +18,3 @@ FROM    `dtc-de-0315.bronze.jobs` curr
         JOIN `dtc-de-0315.bronze.figi` figi
           ON curr.figi_primary_key = figi.figi_primary_key
 ORDER   BY growth_pct DESC
-;

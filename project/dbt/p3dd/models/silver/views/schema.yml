@@ -99,7 +99,8 @@ models:
 version: 2
 
 sources:
-  - name: bronze
+  - name: bronze_jobs_figi
+    schema: bronze
     tables:
       - name: jobs
         description: "The daily number of job postings for each Financial Instrument Global Identifier (FIGI)."

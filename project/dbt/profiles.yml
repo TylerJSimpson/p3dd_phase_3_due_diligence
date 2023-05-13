@@ -4,9 +4,8 @@ p3dd:
       dataset: silver
       job_execution_timeout_seconds: 300
       job_retries: 1
-      keyfile: /c/Users/simps/p3dd_phase_3_due_diligence/project/configuration/dtc-de-0315-7c3955b32bd3.json
       location: US
-      method: service-account
+      method: oauth
       priority: interactive
       project: dtc-de-0315
       threads: 1

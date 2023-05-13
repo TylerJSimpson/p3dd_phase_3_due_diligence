@@ -1,6 +1,5 @@
 {{ config(
     materialized='view',
-    schema='silver',
     alias='jobs_weekly_growth'
 ) }}
 
@@ -22,4 +21,4 @@ FROM    `dtc-de-0315.bronze.jobs` curr
             ON curr.figi_primary_key = figi.figi_primary_key
 GROUP   BY figi.figi_source_name, figi.ticker, curr.num_jobs
 ORDER   BY growth_pct DESC
-;
+
