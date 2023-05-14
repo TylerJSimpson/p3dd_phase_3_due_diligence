@@ -17,4 +17,7 @@ FROM    `dtc-de-0315.bronze.jobs` curr
           AND DATE(curr.timestamp) = DATE_SUB(DATE(prev.timestamp), INTERVAL 1 DAY)
         JOIN `dtc-de-0315.bronze.figi` figi
           ON curr.figi_primary_key = figi.figi_primary_key
+GROUP   BY figi.figi_source_name, figi.ticker, prev.num_jobs, curr.num_jobs
+HAVING  MAX(curr.num_jobs) < 1000
 ORDER   BY growth_pct DESC
+

@@ -4,6 +4,35 @@ dbt is a tool that allows for transformations, testing, and documentation of dat
 Below you will find details on the dbt models used in this project as well as general setup instructions.  
 
 ## Models
+### Views
+#### Schema: Silver  
+
+name: jobs_daily_total  
+description: "Aggregates the daily number of job postings for each Financial Instrument   Global Identifier (FIGI). Excludes FIGIs with any day where the number of job postings is greater than or equal to 1000."  
+alias: jobs_daily_total  
+materialized: view  
+schema: silver  
+
+name: jobs_daily_growth  
+description: "Calculates the daily percentage growth in the number of job postings for each Financial Instrument Global Identifier (FIGI). Excludes FIGIs with any day where the number of job postings is greater than or equal to 1000."  
+alias: jobs_daily_growth  
+materialized: view  
+schema: silver  
+
+name: jobs_weekly_growth  
+description: "Calculates the weekly percentage growth in the number of job postings for each Financial Instrument Global Identifier (FIGI). Excludes FIGIs with any day where the number of job postings is greater than or equal to 1000."  
+alias: jobs_weekly_growth  
+materialized: view  
+schema: silver  
+
+name: jobs_monthly_growth  
+description: "Calculates the monthly percentage growth in the number of job postings for each Financial Instrument Global Identifier (FIGI). Excludes FIGIs with any day where the number of job postings is greater than or equal to 1000."  
+alias: jobs_monthly_growth  
+materialized: view  
+schema: silver  
+
+
+
 
 ## Setup
 
@@ -30,10 +59,13 @@ This will prompt you to name your dbt project and ask for details based on the d
 
 ### Interacting with dbt
 
-To initialize as above and test with specific profile directory path:
+Initialize, test, and run with specific profiles.yml path. Must be ran from the directory containing the dbt_project.yml:  
 ```bash
 dbt init --profiles-dir /c/Users/simps/p3dd_phase_3_due_diligence/project/dbt
 ```
 ```bash
 dbt test --profiles-dir /c/Users/simps/p3dd_phase_3_due_diligence/project/dbt
+```
+```bash
+dbt run --profiles-dir /c/Users/simps/p3dd_phase_3_due_diligence/project/dbt
 ```

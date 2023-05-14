@@ -10,10 +10,10 @@
     - [ ] Ensure all Bloomberg Exchange Codes are captured (UW, UV, UR, UQ, UP, UN, UF, UA) 
         References:
         - https://stockmarketmba.com/globalstockexchanges.php
-- [ ] Analytical views of job data
+- [x] Analytical views of job data
     Requirements:
-    - [ ] Implement dbt for BigQuery warehouse locally on backend machine and integrate with orchestration layer
-    - [ ] Create analytical transformations/views for value add
+    - [x] Implement dbt for BigQuery warehouse locally on backend machine and integrate with orchestration layer
+    - [x] Create analytical transformations/views for value add
         References:
         - Daily Snapshot
         - Top Companies
