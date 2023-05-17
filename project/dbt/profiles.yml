@@ -1,6 +1,7 @@
 p3dd:
+  target: silver
   outputs:
-    dev:
+    silver:
       dataset: silver
       job_execution_timeout_seconds: 300
       job_retries: 1
@@ -10,4 +11,13 @@ p3dd:
       project: dtc-de-0315
       threads: 1
       type: bigquery
-  target: dev
+    gold:
+      dataset: gold
+      job_execution_timeout_seconds: 300
+      job_retries: 1
+      location: US
+      method: oauth
+      priority: interactive
+      project: dtc-de-0315
+      threads: 1
+      type: bigquery

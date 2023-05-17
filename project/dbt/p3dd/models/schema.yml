@@ -1,0 +1,101 @@
+# silver/jobs_growth.yml
+version: 2
+
+sources:
+  - name: bronze
+    tables:
+      - name: jobs
+        description: "The daily number of job postings for each Financial Instrument Global Identifier (FIGI)."
+      - name: figi
+        description: "Financial Instrument Global Identifier (FIGI) information."
+
+models:
+  - name: jobs_growth
+    description: "For each FIGI key maintains the current day, previous day, average previous week, and average previous month number of jobs."
+    alias: jobs_growth
+    materialized: table
+    schema: silver
+    sql: >
+      SELECT  figi_primary_key,
+              nct_source_name,
+              ticker,
+              MAX(IF(DATE(timestamp) = max_date, num_jobs, NULL)) AS curr_day_num_jobs,
+              MAX(IF(DATE(timestamp) = prev_date, num_jobs, NULL)) AS prev_day_num_jobs,
+              AVG(IF(DATE(timestamp) BETWEEN prev_week_start AND prev_week_end, num_jobs, NULL)) AS prev_week_num_jobs,
+              AVG(IF(DATE(timestamp) BETWEEN prev_month_start AND prev_month_end, num_jobs, NULL)) AS prev_month_num_jobs
+      FROM
+        (
+          SELECT  jobs.figi_primary_key,
+                  figi.nct_source_name,
+                  figi.ticker,
+                  num_jobs,
+                  timestamp,
+                  MAX(DATE(timestamp)) OVER () AS max_date,
+                  DATE_SUB(MAX(DATE(timestamp)) OVER (), INTERVAL 1 DAY) AS prev_date,
+                  DATE_SUB(MAX(DATE(timestamp)) OVER (), INTERVAL 7 DAY) AS prev_week_start,
+                  DATE_SUB(MAX(DATE(timestamp)) OVER (), INTERVAL 1 DAY) AS prev_week_end,
+                  DATE_SUB(MAX(DATE(timestamp)) OVER (), INTERVAL 30 DAY) AS prev_month_start,
+                  DATE_SUB(MAX(DATE(timestamp)) OVER (), INTERVAL 1 DAY) AS prev_month_end
+          FROM    `dtc-de-0315.bronze.jobs` jobs
+                  JOIN `dtc-de-0315.bronze.figi` figi ON jobs.figi_primary_key = figi.figi_primary_key
+        )
+      GROUP BY  figi_primary_key, nct_source_name, ticker
+      HAVING    curr_day_num_jobs < 1000 OR
+                prev_day_num_jobs < 1000 OR
+                prev_week_num_jobs < 1000 OR
+                prev_month_num_jobs < 1000
+
+
+# gold/jobs_daily_total.yml
+version: 2
+
+sources:
+  - name: bronze
+    tables:
+      - name: jobs
+        description: "The daily number of job postings for each Financial Instrument Global Identifier (FIGI)."
+
+models:
+  - name: jobs_daily_total
+    description: "Aggregates the daily number of job postings for each Financial Instrument Global Identifier (FIGI). Excludes FIGIs with any day where the number of job postings is greater than or equal to 1000."
+    alias: jobs_daily_total
+    materialized: view
+    schema: gold
+    sql: >
+      SELECT  DATE(DATE_TRUNC(timestamp, DAY)) AS day,
+              SUM(num_jobs) AS total_num_jobs
+      FROM    `dtc-de-0315.bronze.jobs`
+      WHERE   figi_primary_key NOT IN (
+                  SELECT figi_primary_key
+                  FROM `dtc-de-0315.bronze.jobs`
+                  WHERE num_jobs >= 1000
+                  GROUP BY figi_primary_key
+              )
+      GROUP   BY day
+      HAVING  MAX(num_jobs) < 1000
+
+# gold/jobs_daily_weekly_monthly_growth.yml
+version: 2
+
+sources:
+  - name: silver
+    tables:
+      - name: jobs_growth
+        description: "For each FIGI key maintains the current day, previous day, average previous week, and average previous month number of jobs."
+
+models:
+  - name: jobs_daily_weekly_monthly_growth
+    description: "Calculates the growth rates of job postings for each FIGI."
+    alias: jobs_daily_weekly_monthly_growth
+    materialized: view
+    schema: gold
+    sql: >
+      SELECT
+        figi_primary_key,
+        nct_source_name,
+        ticker,
+        (curr_day_num_jobs - prev_day_num_jobs) / NULLIF(prev_day_num_jobs, 0) AS daily_growth,
+        (curr_day_num_jobs - prev_week_num_jobs) / NULLIF(prev_week_num_jobs, 0) AS weekly_growth,
+        (curr_day_num_jobs - prev_month_num_jobs) / NULLIF(prev_month_num_jobs, 0) AS monthly_growth
+      FROM
+        `dtc-de-0315.silver.jobs_growth`

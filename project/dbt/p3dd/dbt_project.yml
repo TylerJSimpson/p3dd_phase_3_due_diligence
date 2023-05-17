@@ -1,4 +1,4 @@
-name: my_project_name
+name: p3dd
 version: 1.0.0
 config-version: 2
 
@@ -14,23 +14,12 @@ profile: "p3dd"
 
 models:
   p3dd:
+    jobs_growth:
+      materialized: table
+      schema: silver
     jobs_daily_total:
-      +materialized: view
-      +schema: silver
-    jobs_daily_growth:
-      +materialized: view
-      +schema: silver
-    jobs_weekly_growth:
-      +materialized: view
-      +schema: silver
-    jobs_monthly_growth:
-      +materialized: view
-      +schema: silver
-
-    sources:
-      bronze:
-        tables:
-          - name: jobs
-            description: "The daily number of job postings for each Financial Instrument Global Identifier (FIGI)."
-          - name: figi
-            description: "Financial Instrument Global Identifier (FIGI) information."
+      materialized: view
+      schema: gold
+    jobs_daily_weekly_monthly_growth:
+      materialized: view
+      schema: gold
