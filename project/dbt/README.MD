@@ -72,8 +72,9 @@ dbt run --profiles-dir /c/Users/simps/p3dd_phase_3_due_diligence/project/dbt
 
 When using multiple target datasets (schemas) you will have to specify models and targets on the fly in separate bash scripts:
 ```bash
-dbt run --profiles-dir /c/Users/simps/p3dd_phase_3_due_diligence/project/dbt --target silver --models s_t_jobs_growth
+dbt run --profiles-dir /c/Users/simps/p3dd_phase_3_due_diligence/project/dbt --target silver --models s_t_jobs_growth --full-refresh
 ```
+--full-refresh forces a full drop and recreate:  
 ```bash
-dbt run --profiles-dir /c/Users/simps/p3dd_phase_3_due_diligence/project/dbt --target gold --models g_v_jobs_daily_total g_v_jobs_daily_weekly_monthly_growth
+dbt run --profiles-dir /c/Users/simps/p3dd_phase_3_due_diligence/project/dbt --target gold --models g_v_jobs_daily_total g_v_jobs_daily_weekly_monthly_growth --full-refresh
 ```

@@ -14,3 +14,4 @@ WHERE   figi_primary_key NOT IN (
         )
 GROUP   BY day
 HAVING  MAX(num_jobs) < 1000  
+ORDER   BY day DESC
