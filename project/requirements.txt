@@ -11,3 +11,5 @@ requests
 pandas-gbq
 python-terraform
 dbt-bigquery
+prefect_dbt
+prefect-shell

@@ -20,6 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 from prefect_gcp import GcpCredentials
 from prefect_gcp.cloud_storage import GcsBucket
 import os
+from prefect_dbt import DbtCoreOperation
 
 @task
 def read_bq():
@@ -192,6 +193,15 @@ def jobs_linkedin_to_gcs_and_bq():
 
     #Write data to BigQuery
     write_bq(data)
+
+    #Run dbt cli commands to refresh silver and gold schema
+    result = DbtCoreOperation(
+        commands=["dbt run --profiles-dir /c/Users/simps/p3dd_phase_3_due_diligence/project/dbt --target silver --models s_t_jobs_growth --full-refresh", 
+                  "dbt run --profiles-dir /c/Users/simps/p3dd_phase_3_due_diligence/project/dbt --target gold --models g_v_jobs_daily_total g_v_jobs_daily_weekly_monthly_growth --full-refresh"],
+        project_dir="C:\\Users\\simps\\p3dd_phase_3_due_diligence\\project\\dbt\\p3dd",
+        profiles_dir="C:\\Users\\simps\\p3dd_phase_3_due_diligence\\project\\dbt"
+    ).run()
+    return result
 
 if __name__ == '__main__':
     jobs_linkedin_to_gcs_and_bq()

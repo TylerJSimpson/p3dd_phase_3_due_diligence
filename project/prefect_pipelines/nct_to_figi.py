@@ -10,13 +10,10 @@ nct_to_figi
 #import packages
 from prefect import Flow, task
 from google.cloud import bigquery
-from bs4 import BeautifulSoup
-import requests
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 import datetime
-from concurrent.futures import ThreadPoolExecutor
 from prefect_gcp import GcpCredentials
 from prefect_gcp.cloud_storage import GcsBucket
 import os
