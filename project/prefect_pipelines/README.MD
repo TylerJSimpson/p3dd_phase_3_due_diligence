@@ -11,7 +11,7 @@ This pipeline extracts data from the [AACT database](https://aact.ctti-clinicalt
 ### [nct_to_figi.py](https://github.com/TylerJSimpson/p3dd_phase_3_due_diligence/blob/main/project/prefect_pipelines/nct_to_figi.py)
 This pipeline pulls the distinct [source] names which act as unclean company names and writes them to BigQuery where they are cleaned and data is added via the [OpenFIGI API](https://www.openfigi.com/).
 ### [jobs_linkedin_to_gcs_and_bq.py](https://github.com/TylerJSimpson/p3dd_phase_3_due_diligence/blob/main/project/prefect_pipelines/jobs_linkedin_to_gcs_and_bq.py)
-This pipeline pulls the distinct [source] names that are clean and parses Linkedin to return job data to append to BigQuery.
+This pipeline pulls the distinct [source] names that are clean and parses Linkedin to return job data to append to BigQuery. The last step is refreshing all dbt models that promote from bronze schema up to silver and then gold schema.
 
 ## Setup
 
