@@ -3,35 +3,81 @@ from google.cloud import bigquery
 import requests
 import configparser
 import time
+import pandas as pd
+from datetime import datetime
+
+def map_common_stock_data(row):
+    adr_data = row['adr_response_data']
+    common_stock_data = row['common_stock_response_data']
+    
+    if adr_data == {'data': []}:
+        if common_stock_data != {'data': []}:
+            stock_data = common_stock_data['data'][0]
+            row['figi_id'] = stock_data['figi']
+            row['figi_source_name'] = stock_data['name']
+            row['ticker'] = stock_data['ticker']
+            row['exchange_code'] = stock_data['exchCode']
+            row['figi_composite'] = stock_data['compositeFIGI']
+            row['security_type'] = stock_data['securityType']
+            row['market_sector'] = stock_data['marketSector']
+            row['share_class'] = stock_data['shareClassFIGI']
+    else:
+        if adr_data != {'data': []}:
+            stock_data = adr_data['data'][0]
+            row['figi_id'] = stock_data['figi']
+            row['figi_source_name'] = stock_data['name']
+            row['ticker'] = stock_data['ticker']
+            row['exchange_code'] = stock_data['exchCode']
+            row['figi_composite'] = stock_data['compositeFIGI']
+            row['security_type'] = stock_data['securityType']
+            row['market_sector'] = stock_data['marketSector']
+            row['share_class'] = stock_data['shareClassFIGI']
+        elif common_stock_data != {'data': []}:
+            stock_data = common_stock_data['data'][0]
+            row['figi_id'] = stock_data['figi']
+            row['figi_source_name'] = stock_data['name']
+            row['ticker'] = stock_data['ticker']
+            row['exchange_code'] = stock_data['exchCode']
+            row['figi_composite'] = stock_data['compositeFIGI']
+            row['security_type'] = stock_data['securityType']
+            row['market_sector'] = stock_data['marketSector']
+            row['share_class'] = stock_data['shareClassFIGI']
+    
+    return row
+
+
+
 
 @task
 def read_bq_nct():
-    """
-    Queries BigQuery table bronze.figi
-    Returns unique identifier (figi_primary_key) and company name from nct data (nct_source_name)
-    from the figi table where it has not yet been identified
-    """
-
-    # Instantiate the BigQuery client
+    # Query BigQuery table bronze.figi
     client = bigquery.Client(project="dtc-de-0315")
 
-    # Define the query
     query = """
         SELECT  figi_primary_key,
-                nct_source_name
+                figi_id,
+                figi_source_name,
+                ticker,
+                exchange_code,
+                security_type,
+                market_sector,
+                figi_composite,
+                share_class,
+                start_date,
+                end_date,
+                nct_source_name,
+                linkedin_source_name
         FROM    `dtc-de-0315.bronze.figi`
         WHERE   linkedin_source_name IS NULL
         AND     end_date IS NULL
+        LIMIT   4
     """
 
-    # Execute the query
     query_job = client.query(query)
     results = query_job.result()
 
-    # Convert the results to a pandas DataFrame
     df = results.to_dataframe()
 
-    # Apply the transformations to the nct_source_name column
     df['nct_source_name_cleaned'] = (
         df['nct_source_name']
         .str.replace(',', '')
@@ -44,13 +90,12 @@ def read_bq_nct():
 
     return df
 
+
 @task
 def call_openfigi_api(query):
-    # Read config file
     config = configparser.ConfigParser()
     config.read('../configuration/config.ini')
 
-    # Get the API key from the config file
     api_key = config.get('openfigi', 'X-OPENFIGI-APIKEY')
 
     url = 'https://api.openfigi.com/v3/search'
@@ -74,29 +119,70 @@ def call_openfigi_api(query):
     adr_response = requests.post(url, json=adr_data, headers=headers)
     common_stock_response = requests.post(url, json=common_stock_data, headers=headers)
 
-    # Access the response data
     adr_response_data = adr_response.json()
     common_stock_response_data = common_stock_response.json()
 
-    print("ADR Response:")
-    print(adr_response_data)
-    print("Common Stock Response:")
-    print(common_stock_response_data)
+    time.sleep(3)
 
-    # Add a wait function to respect rate limits
-    time.sleep(3)  # Wait for 3 seconds before making the next API call
+    return query, adr_response_data, common_stock_response_data
+
+
+@task
+def process_api_responses(responses):
+    query, adr_response_data, common_stock_response_data = responses
+    df = pd.DataFrame(
+        {
+            'nct_source_name_cleaned': [query],
+            'adr_response_data': [adr_response_data],
+            'common_stock_response_data': [common_stock_response_data]
+        }
+    )
+    
+    df = df.apply(map_common_stock_data, axis=1)
+    
+    return df
+
+
+@task
+def update_end_date(df):
+    def is_empty(response):
+        return response == {'data': []}
+
+    def format_date(date):
+        return datetime.strptime(str(date), '%Y-%m-%d').strftime('%m/%d/%Y')
+
+    df['end_date'] = df.apply(lambda row: format_date(row['start_date']) if is_empty(row['adr_response_data']) and is_empty(row['common_stock_response_data']) else row['end_date'], axis=1)
+    return df
+
+
+@task
+def write_dataframe_to_csv(df, filename):
+    df.to_csv(filename, index=False)
+
 
 @Flow
 def figi_update():
-    # Queries BigQuery and writes to pandas dataframe
     data = read_bq_nct()
-    
-    # Call OpenFIGI API for each query in nct_source_name_cleaned
+
+    # First dataframe: BigQuery query results with nct_source_name_cleaned
+    df1 = data.copy()
+
+    # Second dataframe: API responses
+    result_df = pd.DataFrame(columns=['nct_source_name_cleaned', 'adr_response_data', 'common_stock_response_data'])
+
     for query in data['nct_source_name_cleaned']:
-        call_openfigi_api(query)
-        
-        # Add a wait function to respect rate limits
-        time.sleep(15)  # Wait for 15 seconds before making the next batch of API calls
+        responses = call_openfigi_api(query)
+        df = process_api_responses(responses)
+        result_df = pd.concat([result_df, df], ignore_index=True)
+
+        time.sleep(15)
+
+    # Merge the dataframes based on the matching values in 'nct_source_name_cleaned'
+    combined_df = pd.merge(df1, result_df, on='nct_source_name_cleaned', how='left', suffixes=('', '_api'))
+
+    combined_df = update_end_date(combined_df)
+
+    write_dataframe_to_csv(combined_df, 'combined_data.csv')
 
 
 if __name__ == '__main__':
