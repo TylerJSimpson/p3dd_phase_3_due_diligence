@@ -5,6 +5,12 @@ import configparser
 import time
 import pandas as pd
 from datetime import datetime
+import pyarrow as pa
+from datetime import datetime
+from prefect_gcp import GcpCredentials
+from prefect_gcp.cloud_storage import GcsBucket
+import os
+import pandas_gbq
 
 def map_common_stock_data(row):
     adr_data = row['adr_response_data']
@@ -70,7 +76,7 @@ def read_bq_nct():
         FROM    `dtc-de-0315.bronze.figi`
         WHERE   linkedin_source_name IS NULL
         AND     end_date IS NULL
-        LIMIT   4
+        LIMIT   1
     """
 
     query_job = client.query(query)
@@ -156,9 +162,75 @@ def update_end_date(df):
 
 
 @task
-def write_dataframe_to_csv(df, filename):
-    df.to_csv(filename, index=False)
+def write_dataframe_to_parquet(df, filename):
+    df['linkedin_source_name'] = '"' + df['nct_source_name'] + '"'
+    df.to_parquet(filename, index=False, compression='snappy', engine='pyarrow')
 
+@task
+def upload_to_gcs(file_path, bucket_name, destination_blob_name):
+    """
+    Uploads parquet file to GCS
+    """
+    gcs_bucket = GcsBucket.load(bucket_name)
+    gcs_bucket.upload_from_path(from_path=file_path, to_path=destination_blob_name)
+
+@task
+def delete_local_file(file_path):
+    """
+    Deletes local file on the VM due to GCS being used as the primary storage
+    """
+    os.remove(file_path)
+
+@task
+def update_bq(df) -> None:
+    """
+    Update BigQuery table bronze.figi with the modified dataframe
+    Updates fields based on figi_primary_key
+    """
+
+    gcp_credentials_block = GcpCredentials.load("p3dd-gcp-credentials")
+
+    mapping = {
+        "figi_primary_key": "figi_primary_key",
+        "figi_id": "figi_id_api",
+        "figi_source_name": "figi_source_name_api",
+        "ticker": "ticker_api",
+        "exchange_code": "exchange_code_api",
+        "security_type": "security_type_api",
+        "market_sector": "market_sector_api",
+        "figi_composite": "figi_composite_api",
+        "share_class": "share_class_api",
+        "start_date": "start_date",
+        "end_date": "end_date",
+        "nct_source_name": "nct_source_name",
+        "linkedin_source_name": "linkedin_source_name"
+    }
+
+    # Convert figi_primary_key to integer
+    df['figi_primary_key'] = df['figi_primary_key'].astype(int)
+ 
+    pandas_gbq.to_gbq(
+        dataframe=df.rename(columns=mapping),  # assuming `mapping` is defined
+        destination_table="bronze.figi_test",
+        project_id="dtc-de-0315",
+        credentials=gcp_credentials_block.get_credentials_from_service_account(),
+        if_exists="append",
+        table_schema=[
+            {"name": "figi_primary_key", "type": "INTEGER"},
+            {"name": "figi_id", "type": "STRING"},
+            {"name": "figi_source_name", "type": "STRING"},
+            {"name": "ticker", "type": "STRING"},
+            {"name": "exchange_code", "type": "STRING"},
+            {"name": "security_type", "type": "STRING"},
+            {"name": "market_sector", "type": "STRING"},
+            {"name": "figi_composite", "type": "STRING"},
+            {"name": "share_class", "type": "STRING"},
+            {"name": "start_date", "type": "DATE"},
+            {"name": "end_date", "type": "DATE"},
+            {"name": "nct_source_name", "type": "STRING"},
+            {"name": "linkedin_source_name", "type": "STRING"}
+        ]
+    )
 
 @Flow
 def figi_update():
@@ -182,8 +254,19 @@ def figi_update():
 
     combined_df = update_end_date(combined_df)
 
-    write_dataframe_to_csv(combined_df, 'combined_data.csv')
+    current_datetime = datetime.now().strftime('%m%d%Y_%H%M%S')
+    filename = f'figi_update_{current_datetime}.parquet'
 
+    write_dataframe_to_parquet(combined_df, filename)
+
+    # Update BigQuery table
+    update_bq(combined_df)
+
+    # Upload Parquet to GCS
+    upload_to_gcs(filename, 'p3dd-gcs-bucket', f'figi/bronze/{filename}')
+
+    # Delete local file
+    delete_local_file(filename)
 
 if __name__ == '__main__':
     figi_update()
