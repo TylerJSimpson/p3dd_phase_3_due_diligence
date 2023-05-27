@@ -181,6 +181,57 @@ def delete_local_file(file_path):
     """
     os.remove(file_path)
 
+
+"""
+#potential skeleton to implement first deleting the columns and then writing them back
+from prefect import task, Flow
+from google.cloud import bigquery
+
+@task
+def delete_rows_from_bigquery():
+    client = bigquery.Client()
+    dataset_id = "your_dataset_id"
+    table_id = "your_table_id"
+    key_column = "your_key_column"
+    key_value = "your_key_value"  # the specific value identifying the rows to delete
+    
+    # Construct the table reference
+    table_ref = client.dataset(dataset_id).table(table_id)
+    
+    # Construct the SQL DELETE statement with a WHERE clause
+    delete_query = f"DELETE FROM `{table_ref.project}.{table_ref.dataset_id}.{table_ref.table_id}` WHERE {key_column} = '{key_value}'"
+    
+    # Delete the rows
+    client.query(delete_query).result()
+
+# Define a Prefect flow
+with Flow("Delete Rows from BigQuery Flow") as flow:
+    delete_task = delete_rows_from_bigquery()
+
+# Run the flow
+flow.run()
+
+#potential skeleton to then append the dataframe
+@task(retries=3)
+def write_bq(data: pd.DataFrame) -> None:
+    """
+    Write pandas dataframe to BiqQuery table bronze.aact_studies
+    Replaces (truncate + write) on each run
+    """
+
+    gcp_credentials_block = GcpCredentials.load("p3dd-gcp-credentials")
+
+    data.to_gbq(
+        destination_table="bronze.nct",
+        project_id="dtc-de-0315",
+        credentials=gcp_credentials_block.get_credentials_from_service_account(),
+        chunksize=500_000,
+        if_exists="replace", #truncate and write
+    )
+
+
+"""
+
 @task
 def update_bq(df) -> None:
     """
