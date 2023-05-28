@@ -10,7 +10,6 @@ from datetime import datetime
 from prefect_gcp import GcpCredentials
 from prefect_gcp.cloud_storage import GcsBucket
 import os
-import pandas_gbq
 
 def map_common_stock_data(row):
     adr_data = row['adr_response_data']
@@ -181,107 +180,39 @@ def delete_local_file(file_path):
     """
     os.remove(file_path)
 
-
-"""
-#potential skeleton to implement first deleting the columns and then writing them back
-from prefect import task, Flow
-from google.cloud import bigquery
-
+'''
 @task
 def delete_rows_from_bigquery():
-    client = bigquery.Client()
-    dataset_id = "your_dataset_id"
-    table_id = "your_table_id"
-    key_column = "your_key_column"
-    key_value = "your_key_value"  # the specific value identifying the rows to delete
+    client = bigquery.Client(project="dtc-de-0315")
     
-    # Construct the table reference
-    table_ref = client.dataset(dataset_id).table(table_id)
-    
-    # Construct the SQL DELETE statement with a WHERE clause
-    delete_query = f"DELETE FROM `{table_ref.project}.{table_ref.dataset_id}.{table_ref.table_id}` WHERE {key_column} = '{key_value}'"
-    
-    # Delete the rows
-    client.query(delete_query).result()
-
-# Define a Prefect flow
-with Flow("Delete Rows from BigQuery Flow") as flow:
-    delete_task = delete_rows_from_bigquery()
-
-# Run the flow
-flow.run()
-
-#potential skeleton to then append the dataframe
-@task(retries=3)
-def write_bq(data: pd.DataFrame) -> None:
+    # Define the query
+    query = """
+        DELETE FROM `dtc-de-0315.bronze.figi_copy` 
+        WHERE figi_primary_key IN
+        (
+                SELECT figi_primary_key
+                FROM `dtc-de-0315.bronze.figi`
+                WHERE linkedin_source_name IS NULL
+                AND end_date IS NULL
+        )
     """
-    Write pandas dataframe to BiqQuery table bronze.aact_studies
-    Replaces (truncate + write) on each run
-    """
+    # Execute the query
+    client.query(query)
+'''
 
+@task()
+def write_bq(combined_df: pd.DataFrame, column_mapping: dict) -> None:
     gcp_credentials_block = GcpCredentials.load("p3dd-gcp-credentials")
 
-    data.to_gbq(
-        destination_table="bronze.nct",
+    combined_df.to_gbq(
+        destination_table="bronze.figi_copy",
         project_id="dtc-de-0315",
         credentials=gcp_credentials_block.get_credentials_from_service_account(),
         chunksize=500_000,
-        if_exists="replace", #truncate and write
-    )
-
-
-"""
-
-@task
-def update_bq(df) -> None:
-    """
-    Update BigQuery table bronze.figi with the modified dataframe
-    Updates fields based on figi_primary_key
-    """
-
-    gcp_credentials_block = GcpCredentials.load("p3dd-gcp-credentials")
-
-    mapping = {
-        "figi_primary_key": "figi_primary_key",
-        "figi_id": "figi_id_api",
-        "figi_source_name": "figi_source_name_api",
-        "ticker": "ticker_api",
-        "exchange_code": "exchange_code_api",
-        "security_type": "security_type_api",
-        "market_sector": "market_sector_api",
-        "figi_composite": "figi_composite_api",
-        "share_class": "share_class_api",
-        "start_date": "start_date",
-        "end_date": "end_date",
-        "nct_source_name": "nct_source_name",
-        "linkedin_source_name": "linkedin_source_name"
-    }
-
-    # Convert figi_primary_key to integer
-    df['figi_primary_key'] = df['figi_primary_key'].astype(int)
- 
-    pandas_gbq.to_gbq(
-        dataframe=df.rename(columns=mapping),  # assuming `mapping` is defined
-        destination_table="bronze.figi_test",
-        project_id="dtc-de-0315",
-        credentials=gcp_credentials_block.get_credentials_from_service_account(),
         if_exists="append",
-        table_schema=[
-            {"name": "figi_primary_key", "type": "INTEGER"},
-            {"name": "figi_id", "type": "STRING"},
-            {"name": "figi_source_name", "type": "STRING"},
-            {"name": "ticker", "type": "STRING"},
-            {"name": "exchange_code", "type": "STRING"},
-            {"name": "security_type", "type": "STRING"},
-            {"name": "market_sector", "type": "STRING"},
-            {"name": "figi_composite", "type": "STRING"},
-            {"name": "share_class", "type": "STRING"},
-            {"name": "start_date", "type": "DATE"},
-            {"name": "end_date", "type": "DATE"},
-            {"name": "nct_source_name", "type": "STRING"},
-            {"name": "linkedin_source_name", "type": "STRING"}
-        ]
+        reauth=column_mapping
     )
+
 
 @Flow
 def figi_update():
@@ -305,19 +236,53 @@ def figi_update():
 
     combined_df = update_end_date(combined_df)
 
+    #Update datatypes
+    combined_df['figi_primary_key'] = pd.to_numeric(combined_df['figi_primary_key'], errors='coerce', downcast='integer')
+    combined_df['figi_id_api'] = combined_df['figi_id'].astype(str)
+    combined_df['figi_source_name'] = combined_df['figi_source_name'].astype(str)
+    combined_df['ticker_api'] = combined_df['ticker'].astype(str)
+    combined_df['exchange_code_api'] = combined_df['exchange_code'].astype(str)
+    combined_df['security_type_api'] = combined_df['security_type'].astype(str)
+    combined_df['market_sector_api'] = combined_df['market_sector'].astype(str)
+    combined_df['figi_composite_api'] = combined_df['figi_composite'].astype(str)
+    combined_df['share_class_api'] = combined_df['share_class'].astype(str)
+    combined_df['start_date'] = pd.to_datetime(combined_df['start_date']).dt.date.astype(str)
+    combined_df['end_date'] = pd.to_datetime(combined_df['end_date']).dt.date.astype(str)
+    combined_df['nct_source_name'] = combined_df['nct_source_name'].astype(str)
+    combined_df['linkedin_source_name'] = combined_df['linkedin_source_name'].astype(str)
+    print(combined_df['figi_primary_key'])
+    print(combined_df['figi_primary_key'].unique())
+
+
     current_datetime = datetime.now().strftime('%m%d%Y_%H%M%S')
     filename = f'figi_update_{current_datetime}.parquet'
 
     write_dataframe_to_parquet(combined_df, filename)
-
-    # Update BigQuery table
-    update_bq(combined_df)
 
     # Upload Parquet to GCS
     upload_to_gcs(filename, 'p3dd-gcs-bucket', f'figi/bronze/{filename}')
 
     # Delete local file
     delete_local_file(filename)
+
+    column_mapping = {
+        'figi_primary_key': 'figi_primary_key',
+        'figi_id_api': 'figi_id',
+        'figi_source_name_api': 'figi_source_name',
+        'ticker_api': 'ticker',
+        'exchange_code_api': 'exchange_code',
+        'security_type_api': 'security_type', 
+        'market_sector_api': 'market_sector',
+        'figi_composite_api': 'figi_composite',
+        'share_class_api': 'share_class',
+        'start_date': 'start_date',
+        'end_date': 'end_date',
+        'nct_source_name': 'nct_source_name',
+        'linkedin_source_name': 'linkedin_source_name'
+    }
+
+    write_bq(combined_df, column_mapping)
+
 
 if __name__ == '__main__':
     figi_update()
