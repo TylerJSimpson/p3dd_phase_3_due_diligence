@@ -10,14 +10,17 @@ from datetime import datetime
 from prefect_gcp import GcpCredentials
 from prefect_gcp.cloud_storage import GcsBucket
 import os
+import pyarrow.parquet as pq
 
 def map_common_stock_data(row):
+    # Function to map common stock data from API responses to the row
     adr_data = row['adr_response_data']
     common_stock_data = row['common_stock_response_data']
     
     if adr_data == {'data': []}:
         if common_stock_data != {'data': []}:
             stock_data = common_stock_data['data'][0]
+            # Map common stock data to row
             row['figi_id'] = stock_data['figi']
             row['figi_source_name'] = stock_data['name']
             row['ticker'] = stock_data['ticker']
@@ -29,6 +32,7 @@ def map_common_stock_data(row):
     else:
         if adr_data != {'data': []}:
             stock_data = adr_data['data'][0]
+            # Map ADR data to row
             row['figi_id'] = stock_data['figi']
             row['figi_source_name'] = stock_data['name']
             row['ticker'] = stock_data['ticker']
@@ -39,6 +43,7 @@ def map_common_stock_data(row):
             row['share_class'] = stock_data['shareClassFIGI']
         elif common_stock_data != {'data': []}:
             stock_data = common_stock_data['data'][0]
+            # Map common stock data to row
             row['figi_id'] = stock_data['figi']
             row['figi_source_name'] = stock_data['name']
             row['ticker'] = stock_data['ticker']
@@ -50,24 +55,13 @@ def map_common_stock_data(row):
     
     return row
 
-
-
-
 @task
 def read_bq_nct():
-    # Query BigQuery table bronze.figi
+    # Task to query BigQuery table bronze.figi and read the results into a DataFrame
     client = bigquery.Client(project="dtc-de-0315")
 
     query = """
         SELECT  figi_primary_key,
-                figi_id,
-                figi_source_name,
-                ticker,
-                exchange_code,
-                security_type,
-                market_sector,
-                figi_composite,
-                share_class,
                 start_date,
                 end_date,
                 nct_source_name,
@@ -75,7 +69,6 @@ def read_bq_nct():
         FROM    `dtc-de-0315.bronze.figi`
         WHERE   linkedin_source_name IS NULL
         AND     end_date IS NULL
-        LIMIT   1
     """
 
     query_job = client.query(query)
@@ -83,6 +76,7 @@ def read_bq_nct():
 
     df = results.to_dataframe()
 
+    # Clean and process the data in the DataFrame
     df['nct_source_name_cleaned'] = (
         df['nct_source_name']
         .str.replace(',', '')
@@ -95,9 +89,9 @@ def read_bq_nct():
 
     return df
 
-
 @task
 def call_openfigi_api(query):
+    # Task to call the OpenFIGI API with the provided query
     config = configparser.ConfigParser()
     config.read('../configuration/config.ini')
 
@@ -121,19 +115,20 @@ def call_openfigi_api(query):
         "securityType": "Common Stock"
     }
 
+    # Make API requests for ADR and common stock data
     adr_response = requests.post(url, json=adr_data, headers=headers)
     common_stock_response = requests.post(url, json=common_stock_data, headers=headers)
 
     adr_response_data = adr_response.json()
     common_stock_response_data = common_stock_response.json()
 
-    time.sleep(3)
+    time.sleep(3)  # Delay to comply with API rate limits
 
     return query, adr_response_data, common_stock_response_data
 
-
 @task
 def process_api_responses(responses):
+    # Task to process the API responses and create a DataFrame
     query, adr_response_data, common_stock_response_data = responses
     df = pd.DataFrame(
         {
@@ -143,51 +138,60 @@ def process_api_responses(responses):
         }
     )
     
-    df = df.apply(map_common_stock_data, axis=1)
-    
+    df = df.apply(map_common_stock_data, axis=1)  # Apply mapping function to each row
+    df['linkedin_source_name'] = '"' + df['nct_source_name_cleaned'] + '"'
     return df
-
 
 @task
 def update_end_date(df):
+    # Task to update the end_date column based on API response data
     def is_empty(response):
-        return response == {'data': []}
+        return response == {'data': []} or response == {}
 
     def format_date(date):
-        return datetime.strptime(str(date), '%Y-%m-%d').strftime('%m/%d/%Y')
+        return datetime.strptime(str(date), '%Y-%m-%d').strftime('%Y-%m-%d')  # Use hyphens instead of slashes
 
+    # Update end_date based on conditions
     df['end_date'] = df.apply(lambda row: format_date(row['start_date']) if is_empty(row['adr_response_data']) and is_empty(row['common_stock_response_data']) else row['end_date'], axis=1)
+    
+    # Replace empty values with 'NULL' for end_date
+    df['end_date'].replace('', 'NULL', inplace=True)
+    
     return df
 
+@task
+def remove_columns(df):
+    # Task to remove unnecessary columns from the DataFrame
+    df = df.drop(['adr_response_data', 'common_stock_response_data', 'nct_source_name_cleaned'], axis=1)
+    return df
 
 @task
-def write_dataframe_to_parquet(df, filename):
-    df['linkedin_source_name'] = '"' + df['nct_source_name'] + '"'
-    df.to_parquet(filename, index=False, compression='snappy', engine='pyarrow')
+def write_dataframe_to_parquet(df, file_path, compression='snappy'):
+    """
+    Write pandas dataframe to parquet file
+    """
+    table = pa.Table.from_pandas(df)
+    pq.write_table(table, file_path, compression=compression)
 
 @task
 def upload_to_gcs(file_path, bucket_name, destination_blob_name):
-    """
-    Uploads parquet file to GCS
-    """
+    # Task to upload a file to GCS
     gcs_bucket = GcsBucket.load(bucket_name)
     gcs_bucket.upload_from_path(from_path=file_path, to_path=destination_blob_name)
 
 @task
 def delete_local_file(file_path):
-    """
-    Deletes local file on the VM due to GCS being used as the primary storage
-    """
+    # Task to delete a local file
     os.remove(file_path)
 
-'''
 @task
 def delete_rows_from_bigquery():
+    # Task to delete rows from BigQuery table
     client = bigquery.Client(project="dtc-de-0315")
     
     # Define the query
     query = """
-        DELETE FROM `dtc-de-0315.bronze.figi_copy` 
+        DELETE FROM `dtc-de-0315.bronze.figi` 
         WHERE figi_primary_key IN
         (
                 SELECT figi_primary_key
@@ -198,24 +202,23 @@ def delete_rows_from_bigquery():
     """
     # Execute the query
     client.query(query)
-'''
 
-@task()
-def write_bq(combined_df: pd.DataFrame, column_mapping: dict) -> None:
+@task
+def write_bq(combined_df: pd.DataFrame) -> None:
+    # Task to write DataFrame to BigQuery
     gcp_credentials_block = GcpCredentials.load("p3dd-gcp-credentials")
 
     combined_df.to_gbq(
-        destination_table="bronze.figi_copy",
+        destination_table="bronze.figi",
         project_id="dtc-de-0315",
         credentials=gcp_credentials_block.get_credentials_from_service_account(),
         chunksize=500_000,
         if_exists="append",
-        reauth=column_mapping
     )
-
 
 @Flow
 def figi_update():
+    # Main flow for the FIGI update process
     data = read_bq_nct()
 
     # First dataframe: BigQuery query results with nct_source_name_cleaned
@@ -229,30 +232,16 @@ def figi_update():
         df = process_api_responses(responses)
         result_df = pd.concat([result_df, df], ignore_index=True)
 
-        time.sleep(15)
+        time.sleep(15)  # Delay between API requests
 
     # Merge the dataframes based on the matching values in 'nct_source_name_cleaned'
-    combined_df = pd.merge(df1, result_df, on='nct_source_name_cleaned', how='left', suffixes=('', '_api'))
+    combined_df = pd.merge(df1, result_df, on='nct_source_name_cleaned', how='inner', suffixes=('', '_api'))
+
+    # Remove the duplicate columns from the right dataframe
+    combined_df = combined_df.loc[:,~combined_df.columns.duplicated()]
 
     combined_df = update_end_date(combined_df)
-
-    #Update datatypes
-    combined_df['figi_primary_key'] = pd.to_numeric(combined_df['figi_primary_key'], errors='coerce', downcast='integer')
-    combined_df['figi_id_api'] = combined_df['figi_id'].astype(str)
-    combined_df['figi_source_name'] = combined_df['figi_source_name'].astype(str)
-    combined_df['ticker_api'] = combined_df['ticker'].astype(str)
-    combined_df['exchange_code_api'] = combined_df['exchange_code'].astype(str)
-    combined_df['security_type_api'] = combined_df['security_type'].astype(str)
-    combined_df['market_sector_api'] = combined_df['market_sector'].astype(str)
-    combined_df['figi_composite_api'] = combined_df['figi_composite'].astype(str)
-    combined_df['share_class_api'] = combined_df['share_class'].astype(str)
-    combined_df['start_date'] = pd.to_datetime(combined_df['start_date']).dt.date.astype(str)
-    combined_df['end_date'] = pd.to_datetime(combined_df['end_date']).dt.date.astype(str)
-    combined_df['nct_source_name'] = combined_df['nct_source_name'].astype(str)
-    combined_df['linkedin_source_name'] = combined_df['linkedin_source_name'].astype(str)
-    print(combined_df['figi_primary_key'])
-    print(combined_df['figi_primary_key'].unique())
-
+    combined_df = remove_columns(combined_df)
 
     current_datetime = datetime.now().strftime('%m%d%Y_%H%M%S')
     filename = f'figi_update_{current_datetime}.parquet'
@@ -265,23 +254,9 @@ def figi_update():
     # Delete local file
     delete_local_file(filename)
 
-    column_mapping = {
-        'figi_primary_key': 'figi_primary_key',
-        'figi_id_api': 'figi_id',
-        'figi_source_name_api': 'figi_source_name',
-        'ticker_api': 'ticker',
-        'exchange_code_api': 'exchange_code',
-        'security_type_api': 'security_type', 
-        'market_sector_api': 'market_sector',
-        'figi_composite_api': 'figi_composite',
-        'share_class_api': 'share_class',
-        'start_date': 'start_date',
-        'end_date': 'end_date',
-        'nct_source_name': 'nct_source_name',
-        'linkedin_source_name': 'linkedin_source_name'
-    }
+    delete_rows_from_bigquery()
 
-    write_bq(combined_df, column_mapping)
+    write_bq(combined_df)
 
 
 if __name__ == '__main__':
