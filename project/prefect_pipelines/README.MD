@@ -7,11 +7,14 @@ Below you will find details on the python pipelines and the extract, transform, 
 ## Pipelines
 
 ### [nct_postgres_to_gcs_and_bq.py](https://github.com/TylerJSimpson/p3dd_phase_3_due_diligence/blob/main/project/prefect_pipelines/nct_postgres_to_gcs_and_bq.py)
-This pipeline extracts data from the [AACT database](https://aact.ctti-clinicaltrials.org/) and writes it to GCS and truncate and writes to BigQuery.
+This pipeline extracts data from the [AACT database](https://aact.ctti-clinicaltrials.org/) and writes it to GCS and truncate and writes to the nct table in BigQuery.
 ### [nct_to_figi.py](https://github.com/TylerJSimpson/p3dd_phase_3_due_diligence/blob/main/project/prefect_pipelines/nct_to_figi.py)
-This pipeline pulls the distinct [source] names which act as unclean company names and writes them to BigQuery where they are cleaned and data is added via the [OpenFIGI API](https://www.openfigi.com/).
+This pipeline pulls the distinct [source] names from the nct table which act as unclean company names and writes them to the figi table in an upsert fashion where it detects new [source] names.
+### [figi_update_to_gcs_and_bq.py](https://github.com/TylerJSimpson/p3dd_phase_3_due_diligence/blob/main/project/prefect_pipelines/figi_update_to_gcs_and_bq.py)
+This pipeline cleans and parses the distinct [source] names through the [OpenFIGI API](https://www.openfigi.com/) and loads the data back into the figi table. This provides all of the financial identifiers such as ticker and cusip. It also adds the linkedin name that is used to parse linkedin in the jobs table.
 ### [jobs_linkedin_to_gcs_and_bq.py](https://github.com/TylerJSimpson/p3dd_phase_3_due_diligence/blob/main/project/prefect_pipelines/jobs_linkedin_to_gcs_and_bq.py)
-This pipeline pulls the distinct [source] names that are clean and parses Linkedin to return job data to append to BigQuery. The last step is refreshing all dbt models that promote from bronze schema up to silver and then gold schema.
+This pipeline pulls the [linkedin_source_name] and parses Linkedin to return job data to append to the jobs table. Being the final pipeline this also conducts the run and refresh of all dbt models that promote up from bronze schema to silver and gold schemas.
+
 
 ## Setup
 

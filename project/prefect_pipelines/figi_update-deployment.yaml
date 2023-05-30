@@ -1,0 +1,43 @@
+###
+### A complete description of a Prefect Deployment for flow 'figi-update'
+###
+name: figi_update
+description: null
+version: 63b427eb54da3bfa13adddf4fe3a231d
+# The work queue that will handle this deployment's runs
+work_queue_name: default
+work_pool_name: null
+tags: []
+parameters: {}
+schedule:
+  cron: 30 3 * * *
+  timezone: null
+  day_or: true
+is_schedule_active: null
+infra_overrides: {}
+infrastructure:
+  type: process
+  env: {}
+  labels: {}
+  name: null
+  command: null
+  stream_output: true
+  working_dir: null
+  block_type_slug: process
+  _block_type_slug: process
+
+###
+### DO NOT EDIT BELOW THIS LINE
+###
+flow_name: figi-update
+manifest_path: null
+storage: null
+path: C:\Users\simps\p3dd_phase_3_due_diligence\project\prefect_pipelines
+entrypoint: figi_update_to_gcs_and_bq.py:figi_update
+parameter_openapi_schema:
+  title: Parameters
+  type: object
+  properties: {}
+  required: null
+  definitions: null
+timestamp: '2023-05-30T19:51:31.541054+00:00'
