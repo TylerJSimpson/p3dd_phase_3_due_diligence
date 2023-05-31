@@ -93,7 +93,9 @@ def read_bq_nct():
 def call_openfigi_api(query):
     # Task to call the OpenFIGI API with the provided query
     config = configparser.ConfigParser()
-    config.read('../configuration/config.ini')
+    
+    config.read('C:\\Users\simps\p3dd_phase_3_due_diligence\project\configuration\config.ini') #using this as relative path not working in deployment with Windows
+    #config.read('../configuration/config.ini')
 
     api_key = config.get('openfigi', 'X-OPENFIGI-APIKEY')
 
@@ -139,7 +141,7 @@ def process_api_responses(responses):
     )
     
     df = df.apply(map_common_stock_data, axis=1)  # Apply mapping function to each row
-    df['linkedin_source_name'] = '"' + df['nct_source_name_cleaned'] + '"'
+    
     return df
 
 @task
@@ -242,6 +244,9 @@ def figi_update():
 
     combined_df = update_end_date(combined_df)
     combined_df = remove_columns(combined_df)
+
+    # Add the step to create the linkedin_source_name column
+    combined_df['linkedin_source_name'] = '"' + df['nct_source_name_cleaned'] + '"'
 
     current_datetime = datetime.now().strftime('%m%d%Y_%H%M%S')
     filename = f'figi_update_{current_datetime}.parquet'
