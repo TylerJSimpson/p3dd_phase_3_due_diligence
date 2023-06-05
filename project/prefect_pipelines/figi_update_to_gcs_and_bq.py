@@ -246,7 +246,7 @@ def figi_update():
     combined_df = remove_columns(combined_df)
 
     # Add the step to create the linkedin_source_name column
-    combined_df['linkedin_source_name'] = '"' + df['nct_source_name_cleaned'] + '"'
+    combined_df['linkedin_source_name'] = '"' + df['nct_source_name'] + '"'
 
     current_datetime = datetime.now().strftime('%m%d%Y_%H%M%S')
     filename = f'figi_update_{current_datetime}.parquet'
