@@ -41,7 +41,7 @@ def read_bq():
                 figi_primary_key,
                 CURRENT_TIMESTAMP() AS timestamp
         FROM    `dtc-de-0315.bronze.figi`
-        WHERE   end_date IS NOT NULL
+        WHERE   linkedin_source_name IS NOT NULL
     """
     
     # Execute the query
