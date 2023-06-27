@@ -16,3 +16,5 @@ SELECT
   (curr_day_num_jobs - prev_month_num_jobs) / NULLIF(prev_month_num_jobs, 0) AS monthly_growth
 FROM
   `dtc-de-0315.silver.jobs_growth`
+WHERE
+  ticker IS NOT NULL
